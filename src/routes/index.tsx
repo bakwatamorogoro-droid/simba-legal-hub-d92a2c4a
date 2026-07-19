@@ -259,33 +259,6 @@ function Landing() {
                 </Button>
               </div>
             ))}
-              <div
-                key={p.title}
-                className="relative overflow-hidden rounded-2xl border border-primary/10 bg-card p-10 shadow-elegant"
-              >
-                <div className="mb-6 flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                    <p.icon className="h-7 w-7" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold uppercase tracking-widest text-gold">{p.tag}</div>
-                    <div className="font-display text-2xl text-primary">{p.title}</div>
-                  </div>
-                </div>
-                <ul className="mb-8 space-y-3">
-                  {p.points.map((pt) => (
-                    <li key={pt} className="flex items-start gap-3 text-sm text-foreground/80">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
-                      <span>{pt}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-                  {p.cta}
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            ))}
           </div>
         </div>
       </section>
