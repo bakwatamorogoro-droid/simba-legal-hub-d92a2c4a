@@ -97,13 +97,15 @@ function Landing() {
           <nav className="hidden items-center gap-8 text-sm font-medium text-muted-foreground md:flex">
             <a href="#features" className="transition-colors hover:text-primary">Features</a>
             <a href="#portals" className="transition-colors hover:text-primary">Portals</a>
-            <a href="#resources" className="transition-colors hover:text-primary">Resources</a>
+            <Link to="/sir-simba" className="transition-colors hover:text-primary">Founder</Link>
             <a href="#legal-aid" className="transition-colors hover:text-primary">Legal Aid</a>
           </nav>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="hidden sm:inline-flex">Sign In</Button>
-            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
-              Get Started
+            <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+              <Link to="/auth">Sign In</Link>
+            </Button>
+            <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Link to="/auth">Get Started</Link>
             </Button>
           </div>
         </div>
@@ -130,12 +132,14 @@ function Landing() {
               iliyoundwa mahsusi kwa wanafunzi wa sheria na waalimu wao.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button size="lg" className="bg-primary text-primary-foreground shadow-elegant hover:bg-primary/90">
-                Anza kama Mwanafunzi
-                <ArrowRight className="ml-2 h-4 w-4" />
+              <Button asChild size="lg" className="bg-primary text-primary-foreground shadow-elegant hover:bg-primary/90">
+                <Link to="/auth">
+                  Anza kama Mwanafunzi
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
               </Button>
-              <Button size="lg" variant="outline" className="border-primary/20">
-                Explore Resources
+              <Button asChild size="lg" variant="outline" className="border-primary/20">
+                <Link to="/sir-simba">Kutana na Founder</Link>
               </Button>
             </div>
 
@@ -247,9 +251,11 @@ function Landing() {
                     </li>
                   ))}
                 </ul>
-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-                  {p.cta}
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  <Link to="/auth">
+                    {p.cta}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
                 </Button>
               </div>
             ))}

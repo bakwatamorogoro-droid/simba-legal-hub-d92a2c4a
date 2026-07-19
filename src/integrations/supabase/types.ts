@@ -14,16 +14,217 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      announcements: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      assignments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          max_marks: number
+          title: string
+          type: Database["public"]["Enums"]["assignment_type"]
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          max_marks?: number
+          title: string
+          type?: Database["public"]["Enums"]["assignment_type"]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          max_marks?: number
+          title?: string
+          type?: Database["public"]["Enums"]["assignment_type"]
+        }
+        Relationships: []
+      }
+      lecturers: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          phone: string | null
+          specialty: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          phone?: string | null
+          specialty?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          phone?: string | null
+          specialty?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          course: string | null
+          created_at: string
+          full_name: string
+          id: string
+          phone: string | null
+          reg_number: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          course?: string | null
+          created_at?: string
+          full_name: string
+          id: string
+          phone?: string | null
+          reg_number: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          course?: string | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          reg_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      submissions: {
+        Row: {
+          assignment_id: string
+          content: string | null
+          feedback: string | null
+          file_url: string | null
+          graded_at: string | null
+          id: string
+          marks: number | null
+          student_id: string
+          submitted_at: string
+        }
+        Insert: {
+          assignment_id: string
+          content?: string | null
+          feedback?: string | null
+          file_url?: string | null
+          graded_at?: string | null
+          id?: string
+          marks?: number | null
+          student_id: string
+          submitted_at?: string
+        }
+        Update: {
+          assignment_id?: string
+          content?: string | null
+          feedback?: string | null
+          file_url?: string | null
+          graded_at?: string | null
+          id?: string
+          marks?: number | null
+          student_id?: string
+          submitted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submissions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      bootstrap_first_admin: { Args: never; Returns: boolean }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "lecturer" | "student"
+      assignment_type: "individual" | "group"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +351,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "lecturer", "student"],
+      assignment_type: ["individual", "group"],
+    },
   },
 } as const
