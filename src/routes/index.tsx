@@ -97,13 +97,15 @@ function Landing() {
           <nav className="hidden items-center gap-8 text-sm font-medium text-muted-foreground md:flex">
             <a href="#features" className="transition-colors hover:text-primary">Features</a>
             <a href="#portals" className="transition-colors hover:text-primary">Portals</a>
-            <a href="#resources" className="transition-colors hover:text-primary">Resources</a>
+            <Link to="/sir-simba" className="transition-colors hover:text-primary">Founder</Link>
             <a href="#legal-aid" className="transition-colors hover:text-primary">Legal Aid</a>
           </nav>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="hidden sm:inline-flex">Sign In</Button>
-            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
-              Get Started
+            <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+              <Link to="/auth">Sign In</Link>
+            </Button>
+            <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Link to="/auth">Get Started</Link>
             </Button>
           </div>
         </div>
@@ -130,12 +132,14 @@ function Landing() {
               iliyoundwa mahsusi kwa wanafunzi wa sheria na waalimu wao.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button size="lg" className="bg-primary text-primary-foreground shadow-elegant hover:bg-primary/90">
-                Anza kama Mwanafunzi
-                <ArrowRight className="ml-2 h-4 w-4" />
+              <Button asChild size="lg" className="bg-primary text-primary-foreground shadow-elegant hover:bg-primary/90">
+                <Link to="/auth">
+                  Anza kama Mwanafunzi
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
               </Button>
-              <Button size="lg" variant="outline" className="border-primary/20">
-                Explore Resources
+              <Button asChild size="lg" variant="outline" className="border-primary/20">
+                <Link to="/sir-simba">Kutana na Founder</Link>
               </Button>
             </div>
 
@@ -226,6 +230,35 @@ function Landing() {
           </div>
           <div className="grid gap-6 md:grid-cols-2">
             {portals.map((p) => (
+              <div
+                key={p.title}
+                className="relative overflow-hidden rounded-2xl border border-primary/10 bg-card p-10 shadow-elegant"
+              >
+                <div className="mb-6 flex items-center gap-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                    <p.icon className="h-7 w-7" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-widest text-gold">{p.tag}</div>
+                    <div className="font-display text-2xl text-primary">{p.title}</div>
+                  </div>
+                </div>
+                <ul className="mb-8 space-y-3">
+                  {p.points.map((pt) => (
+                    <li key={pt} className="flex items-start gap-3 text-sm text-foreground/80">
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
+                      <span>{pt}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  <Link to="/auth">
+                    {p.cta}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            ))}
               <div
                 key={p.title}
                 className="relative overflow-hidden rounded-2xl border border-primary/10 bg-card p-10 shadow-elegant"
