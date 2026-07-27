@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -17,21 +17,19 @@ export const Route = createFileRoute("/register")({
 });
 
 function RegisterPage() {
-  const navigate = useNavigate();
   const fetchOptions = useServerFn(listCoursesAndYears);
   const doRegister = useServerFn(registerStudent);
   const { data, isLoading } = useQuery({ queryKey: ["cy"], queryFn: () => fetchOptions() });
 
   const [form, setForm] = useState({
-    full_name: "", last_name: "", reg_number: "", exam_number: "",
-    phone: "", academic_year_id: "", course_id: "",
+    full_name: "", reg_number: "", phone: "", academic_year_id: "", course_id: "",
   });
   const [saving, setSaving] = useState(false);
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState<{ reg_number: string } | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.full_name || !form.last_name || !form.reg_number || !form.exam_number || !form.phone || !form.academic_year_id || !form.course_id) {
+    if (!form.full_name || !form.reg_number || !form.phone || !form.academic_year_id || !form.course_id) {
       return toast.error("Jaza sehemu zote / Fill all fields");
     }
     setSaving(true);
@@ -39,7 +37,7 @@ function RegisterPage() {
     setSaving(false);
     if (!res.ok) return toast.error(res.error);
     toast.success("Umesajiliwa kikamilifu!");
-    setDone(true);
+    setDone({ reg_number: form.reg_number });
   }
 
   return (
@@ -51,10 +49,15 @@ function RegisterPage() {
             <div className="py-8 text-center">
               <CheckCircle2 className="mx-auto h-14 w-14 text-gold" />
               <h1 className="mt-4 font-display text-2xl text-primary">Karibu Simba Legal Academy!</h1>
-              <p className="mt-2 text-sm text-muted-foreground">Usajili wako umekamilika. Sasa unaweza kuingia kupitia <b>Student Login</b> ukitumia Exam Number na Last Name yako.</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Usajili umekamilika. Ingia kupitia <b>Student Login</b> ukitumia Registration Number yako.
+              </p>
+              <div className="mt-4 inline-block rounded-xl border border-gold/40 bg-gold/5 px-4 py-2 font-mono text-sm text-primary">
+                {done.reg_number}
+              </div>
               <div className="mt-6 flex justify-center gap-3">
                 <Button asChild variant="outline"><Link to="/">Nyumbani</Link></Button>
-                <Button onClick={() => { setDone(false); setForm({ full_name: "", last_name: "", reg_number: "", exam_number: "", phone: "", academic_year_id: "", course_id: "" }); }}>Sajili Mwingine</Button>
+                <Button asChild><Link to="/login">Ingia sasa</Link></Button>
               </div>
             </div>
           ) : (
@@ -70,25 +73,17 @@ function RegisterPage() {
               </div>
 
               <form onSubmit={submit} className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Full Name / Jina Kamili">
-                    <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="John Msele Bakari" />
-                  </Field>
-                  <Field label="Last Name / Jina la Mwisho">
-                    <Input value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} placeholder="Bakari" />
-                  </Field>
-                </div>
+                <Field label="Full Name / Jina Kamili">
+                  <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="John Msele Bakari" />
+                </Field>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Registration Number">
                     <Input value={form.reg_number} onChange={(e) => setForm({ ...form, reg_number: e.target.value })} placeholder="SLA/2024/001" />
                   </Field>
-                  <Field label="Exam Number">
-                    <Input value={form.exam_number} onChange={(e) => setForm({ ...form, exam_number: e.target.value })} placeholder="EX/2024/001" />
+                  <Field label="Phone Number / Simu">
+                    <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+255 712 345 678" />
                   </Field>
                 </div>
-                <Field label="Phone Number / Simu">
-                  <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+255 712 345 678" />
-                </Field>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Academic Year">
                     <Select value={form.academic_year_id} onValueChange={(v) => setForm({ ...form, academic_year_id: v })}>

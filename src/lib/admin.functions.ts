@@ -155,8 +155,8 @@ export const listStudents = createServerFn({ method: "GET" }).handler(async (): 
 
 const studentSchema = z.object({
   full_name: z.string().trim().min(2).max(160),
-  last_name: z.string().trim().min(2).max(80),
-  exam_number: z.string().trim().min(2).max(80),
+  last_name: z.string().trim().max(80).optional().nullable(),
+  exam_number: z.string().trim().max(80).optional().nullable(),
   reg_number: z.string().trim().min(2).max(80),
   phone: z.string().trim().min(5).max(30),
   academic_year_id: z.string().uuid(),
@@ -167,15 +167,24 @@ export const registerStudent = createServerFn({ method: "POST" })
   .inputValidator((d) => studentSchema.parse(d))
   .handler(async ({ data }) => {
     const supabase = await getServiceClient();
-    const { error } = await supabase.from("students").insert(data);
+    const payload = {
+      full_name: data.full_name,
+      reg_number: data.reg_number,
+      phone: data.phone,
+      academic_year_id: data.academic_year_id,
+      course_id: data.course_id,
+      last_name: data.last_name ?? null,
+      exam_number: data.exam_number ?? null,
+    };
+    const { error } = await supabase.from("students").insert(payload);
     if (error) {
       const msg = error.message.toLowerCase();
-      if (msg.includes("exam_number")) return { ok: false as const, error: "Exam number tayari ipo. Chagua nyingine." };
       if (msg.includes("duplicate") || msg.includes("unique")) return { ok: false as const, error: "Registration number tayari ipo." };
       return { ok: false as const, error: error.message };
     }
     return { ok: true as const };
   });
+
 
 export const updateStudent = createServerFn({ method: "POST" })
   .inputValidator((d) => studentSchema.extend({ id: z.string().uuid() }).parse(d))

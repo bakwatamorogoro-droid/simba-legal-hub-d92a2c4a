@@ -137,6 +137,42 @@ export type Database = {
         }
         Relationships: []
       }
+      group_chat_messages: {
+        Row: {
+          academic_year_id: string
+          assignment_id: string
+          course_id: string
+          created_at: string
+          full_name: string
+          id: string
+          message: string
+          reg_number: string
+          student_id: string
+        }
+        Insert: {
+          academic_year_id: string
+          assignment_id: string
+          course_id: string
+          created_at?: string
+          full_name: string
+          id?: string
+          message: string
+          reg_number: string
+          student_id: string
+        }
+        Update: {
+          academic_year_id?: string
+          assignment_id?: string
+          course_id?: string
+          created_at?: string
+          full_name?: string
+          id?: string
+          message?: string
+          reg_number?: string
+          student_id?: string
+        }
+        Relationships: []
+      }
       group_members: {
         Row: {
           confirmed_at: string | null
@@ -190,6 +226,7 @@ export type Database = {
           id: string
           marked_at: string | null
           marks: number | null
+          participants: Json
           remarks: string | null
           submitted_at: string
           submitted_by_student_id: string
@@ -204,6 +241,7 @@ export type Database = {
           id?: string
           marked_at?: string | null
           marks?: number | null
+          participants?: Json
           remarks?: string | null
           submitted_at?: string
           submitted_by_student_id: string
@@ -218,6 +256,7 @@ export type Database = {
           id?: string
           marked_at?: string | null
           marks?: number | null
+          participants?: Json
           remarks?: string | null
           submitted_at?: string
           submitted_by_student_id?: string

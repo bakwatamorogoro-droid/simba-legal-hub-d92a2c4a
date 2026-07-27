@@ -32,21 +32,18 @@ function normalize(s: string) {
 
 // ---------- Auth ----------
 export const studentLogin = createServerFn({ method: "POST" })
-  .inputValidator((d: { exam_number: string; last_name: string }) =>
-    z.object({
-      exam_number: z.string().trim().min(1).max(80),
-      last_name: z.string().trim().min(1).max(80),
-    }).parse(d),
+  .inputValidator((d: { reg_number: string }) =>
+    z.object({ reg_number: z.string().trim().min(1).max(80) }).parse(d),
   )
   .handler(async ({ data }) => {
     const supabase = await getServiceClient();
     const { data: student } = await supabase
       .from("students")
-      .select("id, full_name, reg_number, last_name, exam_number")
-      .eq("exam_number", data.exam_number.trim())
+      .select("id, full_name, reg_number")
+      .ilike("reg_number", data.reg_number.trim())
       .maybeSingle();
-    if (!student || !student.last_name || normalize(student.last_name) !== normalize(data.last_name)) {
-      return { ok: false as const, error: "Exam number au last name si sahihi" };
+    if (!student) {
+      return { ok: false as const, error: "Registration number haipo. Hakikisha umejisajili." };
     }
     const session = await getSession();
     await session.update({
@@ -72,28 +69,24 @@ export const getStudentSession = createServerFn({ method: "GET" }).handler(
   },
 );
 
-export const recoverExamNumber = createServerFn({ method: "POST" })
-  .inputValidator((d: { phone: string; last_name: string }) =>
-    z.object({
-      phone: z.string().trim().min(5).max(30),
-      last_name: z.string().trim().min(1).max(80),
-    }).parse(d),
+// Recover Reg Number using phone
+export const recoverRegNumber = createServerFn({ method: "POST" })
+  .inputValidator((d: { phone: string }) =>
+    z.object({ phone: z.string().trim().min(5).max(30) }).parse(d),
   )
   .handler(async ({ data }) => {
     const supabase = await getServiceClient();
     const { data: student } = await supabase
       .from("students")
-      .select("full_name, exam_number, last_name, phone")
+      .select("full_name, reg_number, phone")
       .eq("phone", data.phone.trim())
       .maybeSingle();
-    if (!student || !student.last_name || normalize(student.last_name) !== normalize(data.last_name)) {
-      return { ok: false as const, error: "Simu au last name si sahihi" };
-    }
-    if (!student.exam_number) {
-      return { ok: false as const, error: "Hujawekewa exam number bado. Wasiliana na admin." };
-    }
-    return { ok: true as const, exam_number: student.exam_number, full_name: student.full_name };
+    if (!student) return { ok: false as const, error: "Simu haipatikani kwenye mfumo." };
+    return { ok: true as const, reg_number: student.reg_number, full_name: student.full_name };
   });
+
+// Back-compat alias (existing imports may still reference it briefly)
+export const recoverExamNumber = recoverRegNumber;
 
 // ---------- Student portal ----------
 type MyAssignment = {
@@ -189,7 +182,6 @@ export const submitMyAssignment = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Deadline imeshapita" };
     }
 
-    // Reject if already locked
     const { data: existing } = await supabase.from("submissions")
       .select("id, locked").eq("assignment_id", assignment.id).eq("student_id", s.studentId).maybeSingle();
     if (existing?.locked) return { ok: false as const, error: "Umeshatuma kazi hii. Hairuhusiwi kutuma tena." };
@@ -206,7 +198,6 @@ export const submitMyAssignment = createServerFn({ method: "POST" })
     });
     if (upErr) return { ok: false as const, error: upErr.message };
 
-    // Run AI check (best-effort)
     const { runAiCheck } = await import("./ai-check.server");
     const ai = await runAiCheck(bytes, data.file_name);
 
@@ -227,3 +218,5 @@ export const submitMyAssignment = createServerFn({ method: "POST" })
     return { ok: true as const, ai };
   });
 
+// Unused normalize (kept to avoid unused-var lint if imported later)
+void normalize;

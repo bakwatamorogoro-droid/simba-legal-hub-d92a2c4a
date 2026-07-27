@@ -1,24 +1,22 @@
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
-  Loader2, Users, LogOut, User, UserPlus, CheckCircle2, XCircle,
+  Loader2, Users, LogOut, User, UserPlus, CheckCircle2,
   Upload, Download, Calendar, Sparkles, Award, Crown, Lock, AlertTriangle,
+  Send, MessageSquare,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { getStudentSession, studentLogout } from "@/lib/student.functions";
 import {
-  listMyGroupAssignments, listMyClassmates,
-  createGroup, respondGroupInvite, leaveOrCancelGroup,
+  listMyGroupAssignments, joinGroupAssignment,
   submitGroupAssignment, getGroupQuestionUrl,
+  listGroupChat, sendGroupChat,
   type GroupAssignmentView, type GroupMember,
 } from "@/lib/group.functions";
 
@@ -26,6 +24,8 @@ export const Route = createFileRoute("/group-assignment")({
   head: () => ({ meta: [{ title: "Group Assignment — Simba Legal Academy" }] }),
   component: Page,
 });
+
+type Session = { studentId: string; fullName: string; regNumber: string };
 
 function Page() {
   const getSession = useServerFn(getStudentSession);
@@ -45,7 +45,7 @@ function NotLoggedIn() {
         </div>
         <h1 className="mt-5 font-display text-2xl text-primary">Group Assignment Portal</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          Ingia kwa Exam Number na Last Name ili kuunda au kujiunga na group.
+          Ingia kwa Registration Number ili kujiunga automatiki na wenzako wa course na mwaka.
         </p>
         <div className="mt-6 flex gap-3">
           <Button asChild><Link to="/login">Ingia / Login</Link></Button>
@@ -56,23 +56,20 @@ function NotLoggedIn() {
   );
 }
 
-type Session = { studentId: string; fullName: string; regNumber: string };
-
 function GroupDashboard({ session }: { session: Session }) {
   const router = useRouter();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const logout = useServerFn(studentLogout);
-
   const fetchAssignments = useServerFn(listMyGroupAssignments);
   const assignments = useQuery({ queryKey: ["my-group-assignments"], queryFn: () => fetchAssignments() });
 
-  // Realtime: refetch when any group/member/submission changes
   useEffect(() => {
     const ch = supabase.channel("group-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "group_members" }, () => assignments.refetch())
       .on("postgres_changes", { event: "*", schema: "public", table: "groups" }, () => assignments.refetch())
       .on("postgres_changes", { event: "*", schema: "public", table: "group_submissions" }, () => assignments.refetch())
+      .on("postgres_changes", { event: "*", schema: "public", table: "group_chat_messages" }, () => assignments.refetch())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [assignments]);
@@ -104,7 +101,7 @@ function GroupDashboard({ session }: { session: Session }) {
       <main className="mx-auto max-w-6xl px-6 py-8">
         <h1 className="font-display text-2xl text-primary">Group Assignments</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Unda group na wanachama wa course/mwaka wako. Wote wakikonfirm, kiongozi hutuma kazi.
+          Jiunge na assignment — utakutana automatiki na wenzako wa course na mwaka mmoja. Ongelea kabla ya kutuma; watakaoshiriki mazungumzo watajumuishwa kwenye submission.
         </p>
 
         <div className="mt-8 space-y-4">
@@ -124,10 +121,9 @@ function GroupDashboard({ session }: { session: Session }) {
 }
 
 function GroupAssignmentCard({ row, session, onChanged }: { row: GroupAssignmentView; session: Session; onChanged: () => void }) {
-  const [createOpen, setCreateOpen] = useState(false);
-  const respond = useServerFn(respondGroupInvite);
-  const leave = useServerFn(leaveOrCancelGroup);
+  const join = useServerFn(joinGroupAssignment);
   const getQ = useServerFn(getGroupQuestionUrl);
+  const [joining, setJoining] = useState(false);
 
   const deadline = new Date(row.deadline);
   const isOverdue = deadline.getTime() < Date.now();
@@ -138,23 +134,13 @@ function GroupAssignmentCard({ row, session, onChanged }: { row: GroupAssignment
     window.open(res.url, "_blank");
   }
 
-  async function respondInvite(accept: boolean) {
-    if (!row.my_group) return;
-    const res = await respond({ data: { group_id: row.my_group.id, accept } });
+  async function doJoin() {
+    setJoining(true);
+    const res = await join({ data: { assignment_id: row.id } });
+    setJoining(false);
     if (!res.ok) toast.error(res.error);
-    else { toast.success(accept ? "Umekonfirm" : "Umekataa"); onChanged(); }
+    else { toast.success("Umejiunga!"); onChanged(); }
   }
-
-  async function leaveGroup() {
-    if (!row.my_group) return;
-    if (!confirm("Uhakika unataka kutoka/kufuta group?")) return;
-    const res = await leave({ data: { group_id: row.my_group.id } });
-    if (!res.ok) toast.error(res.error);
-    else { toast.success("Imefanyika"); onChanged(); }
-  }
-
-  const isLeader = row.my_group?.leader_student_id === session.studentId;
-  const myStatus = row.my_group?.members.find((m) => m.student_id === session.studentId)?.status;
 
   return (
     <div className="rounded-2xl border border-border bg-card p-6 shadow-sm ring-1 ring-gold/10">
@@ -177,57 +163,43 @@ function GroupAssignmentCard({ row, session, onChanged }: { row: GroupAssignment
           </div>
         </div>
         <div className="flex gap-2">
-          {row.question_path && (
+          {row.question_path && row.my_group && (
             <Button size="sm" variant="outline" onClick={download}><Download className="mr-1 h-4 w-4" /> Question</Button>
           )}
           {!row.my_group && !isOverdue && (
-            <Button size="sm" onClick={() => setCreateOpen(true)}><UserPlus className="mr-1 h-4 w-4" /> Unda Group</Button>
+            <Button size="sm" onClick={doJoin} disabled={joining}>
+              {joining ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <UserPlus className="mr-1 h-4 w-4" />}
+              Jiunge
+            </Button>
           )}
         </div>
       </div>
 
       {row.my_group && (
-        <div className="mt-5 rounded-xl border border-border bg-muted/30 p-4">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">Group</div>
-              <div className="font-display text-primary">{row.my_group.name}</div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${row.my_group.all_confirmed ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                <CheckCircle2 className="h-3.5 w-3.5" /> {row.my_group.confirmed_count}/{row.my_group.total_count} confirmed
+        <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_1.2fr]">
+          <div className="rounded-xl border border-border bg-muted/30 p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">Members</div>
+                <div className="font-display text-primary">{row.my_group.name}</div>
+              </div>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                <CheckCircle2 className="h-3.5 w-3.5" /> {row.my_group.members.length} wamejiunga
               </span>
-              {!row.my_group.submission && (
-                <Button size="sm" variant="ghost" onClick={leaveGroup}>
-                  {isLeader ? "Futa Group" : "Toka"}
-                </Button>
-              )}
             </div>
+            <MembersList members={row.my_group.members} session={session} />
+
+            {!row.my_group.submission && (
+              <SubmitBox
+                groupId={row.my_group.id}
+                disabled={isOverdue}
+                onChanged={onChanged}
+              />
+            )}
+            {row.my_group.submission && <SubmissionView sub={row.my_group.submission} />}
           </div>
 
-          <MembersList members={row.my_group.members} session={session} />
-
-          {myStatus === "pending" && (
-            <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-gold/40 bg-gold/5 p-3">
-              <span className="text-sm">Umealikwa kwenye group hili. Konfirm?</span>
-              <div className="flex gap-2">
-                <Button size="sm" onClick={() => respondInvite(true)}><CheckCircle2 className="mr-1 h-4 w-4" /> Konfirm</Button>
-                <Button size="sm" variant="outline" onClick={() => respondInvite(false)}><XCircle className="mr-1 h-4 w-4" /> Kataa</Button>
-              </div>
-            </div>
-          )}
-
-          {isLeader && !row.my_group.submission && (
-            <LeaderSubmit
-              groupId={row.my_group.id}
-              canSubmit={row.my_group.all_confirmed && !isOverdue}
-              onChanged={onChanged}
-            />
-          )}
-
-          {row.my_group.submission && (
-            <SubmissionView sub={row.my_group.submission} />
-          )}
+          <ChatPanel assignmentId={row.id} session={session} />
         </div>
       )}
 
@@ -236,21 +208,15 @@ function GroupAssignmentCard({ row, session, onChanged }: { row: GroupAssignment
           <AlertTriangle className="h-4 w-4" /> Deadline imeshapita.
         </div>
       )}
-
-      <CreateGroupDialog
-        open={createOpen} onClose={() => setCreateOpen(false)}
-        assignmentId={row.id} assignmentTitle={row.title}
-        onCreated={() => { setCreateOpen(false); onChanged(); }}
-      />
     </div>
   );
 }
 
 function MembersList({ members, session }: { members: GroupMember[]; session: Session }) {
   const [online, setOnline] = useState<Set<string>>(new Set());
-  const key = useMemo(() => members.map((m) => m.student_id).sort().join(","), [members]);
   useEffect(() => {
-    if (!key) return;
+    if (members.length === 0) return;
+    const key = members.map((m) => m.student_id).sort().join(",");
     const ch = supabase.channel(`presence:${key}`, { config: { presence: { key: session.studentId } } });
     ch.on("presence", { event: "sync" }, () => {
       const state = ch.presenceState<{ id: string }>();
@@ -261,21 +227,27 @@ function MembersList({ members, session }: { members: GroupMember[]; session: Se
       if (status === "SUBSCRIBED") await ch.track({ id: session.studentId, name: session.fullName });
     });
     return () => { supabase.removeChannel(ch); };
-  }, [key, session.studentId, session.fullName]);
+  }, [members, session.studentId, session.fullName]);
 
   return (
-    <ul className="space-y-2">
+    <ul className="space-y-1.5">
       {members.map((m) => {
         const isOnline = online.has(m.student_id);
         return (
           <li key={m.student_id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm">
             <div className="flex items-center gap-2">
-              <span className={`h-2 w-2 rounded-full ${isOnline ? "bg-emerald-500" : "bg-muted-foreground/30"}`} title={isOnline ? "Live" : "Offline"} />
+              <span className={`h-2 w-2 rounded-full ${isOnline ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground/30"}`} title={isOnline ? "Live" : "Offline"} />
               {m.is_leader && <Crown className="h-4 w-4 text-gold" />}
               <span className="font-medium text-primary">{m.full_name}</span>
-              <span className="text-xs font-mono text-muted-foreground">{m.reg_number}</span>
+              <span className="font-mono text-xs text-muted-foreground">{m.reg_number}</span>
             </div>
-            <StatusBadge status={m.status} />
+            {m.did_chat ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                <MessageSquare className="h-3 w-3" /> Alishiriki
+              </span>
+            ) : (
+              <span className="text-[10px] text-muted-foreground">Bado</span>
+            )}
           </li>
         );
       })}
@@ -283,13 +255,74 @@ function MembersList({ members, session }: { members: GroupMember[]; session: Se
   );
 }
 
-function StatusBadge({ status }: { status: "pending" | "confirmed" | "declined" }) {
-  if (status === "confirmed") return <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700"><CheckCircle2 className="h-3 w-3" /> Confirmed</span>;
-  if (status === "declined") return <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700"><XCircle className="h-3 w-3" /> Declined</span>;
-  return <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Pending</span>;
+function ChatPanel({ assignmentId, session }: { assignmentId: string; session: Session }) {
+  const fetchChat = useServerFn(listGroupChat);
+  const send = useServerFn(sendGroupChat);
+  const chat = useQuery({ queryKey: ["chat", assignmentId], queryFn: () => fetchChat({ data: { assignment_id: assignmentId } }) });
+  const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
+  const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const ch = supabase.channel(`chat-${assignmentId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "group_chat_messages", filter: `assignment_id=eq.${assignmentId}` }, () => chat.refetch())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [assignmentId, chat]);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chat.data?.length]);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const t = text.trim();
+    if (!t) return;
+    setSending(true);
+    const res = await send({ data: { assignment_id: assignmentId, message: t } });
+    setSending(false);
+    if (!res.ok) return toast.error(res.error);
+    setText("");
+  }
+
+  return (
+    <div className="flex flex-col rounded-xl border border-border bg-background">
+      <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+        <div className="flex items-center gap-2">
+          <MessageSquare className="h-4 w-4 text-gold" />
+          <div className="text-sm font-semibold text-primary">Discussion</div>
+        </div>
+        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Chat kabla ya kutuma</div>
+      </div>
+      <div className="max-h-72 min-h-[220px] flex-1 space-y-2 overflow-y-auto px-4 py-3">
+        {(chat.data ?? []).length === 0 && (
+          <div className="py-8 text-center text-xs text-muted-foreground">Bado hakuna ujumbe. Anzisha mazungumzo!</div>
+        )}
+        {(chat.data ?? []).map((m) => {
+          const mine = m.student_id === session.studentId;
+          return (
+            <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${mine ? "bg-primary text-primary-foreground" : "border border-border bg-muted"}`}>
+                {!mine && <div className="mb-0.5 text-[10px] font-semibold opacity-70">{m.full_name} · {m.reg_number}</div>}
+                <div className="whitespace-pre-wrap">{m.message}</div>
+                <div className={`mt-1 text-[9px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>{new Date(m.created_at).toLocaleTimeString()}</div>
+              </div>
+            </div>
+          );
+        })}
+        <div ref={endRef} />
+      </div>
+      <form onSubmit={submit} className="flex gap-2 border-t border-border p-3">
+        <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Andika ujumbe..." maxLength={2000} />
+        <Button type="submit" size="sm" disabled={sending || !text.trim()}>
+          {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        </Button>
+      </form>
+    </div>
+  );
 }
 
-function LeaderSubmit({ groupId, canSubmit, onChanged }: { groupId: string; canSubmit: boolean; onChanged: () => void }) {
+function SubmitBox({ groupId, disabled, onChanged }: { groupId: string; disabled: boolean; onChanged: () => void }) {
   const submit = useServerFn(submitGroupAssignment);
   const ref = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -318,12 +351,12 @@ function LeaderSubmit({ groupId, canSubmit, onChanged }: { groupId: string; canS
   return (
     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
       <div className="text-xs text-muted-foreground">
-        {canSubmit ? "Wanachama wote wamekonfirm — unaweza kutuma." : "Subiri wanachama wote wakonfirm kwanza."}
+        Yeyote aliyejiunga anaweza kutuma. Waliochat watajumuishwa kama washiriki.
       </div>
       <input ref={ref} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={onFile} />
-      <Button size="sm" disabled={!canSubmit || uploading} onClick={() => ref.current?.click()}>
+      <Button size="sm" disabled={disabled || uploading} onClick={() => ref.current?.click()}>
         {uploading ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Upload className="mr-1 h-4 w-4" />}
-        Tuma Kazi ya Group
+        Tuma Kazi
       </Button>
     </div>
   );
@@ -335,13 +368,19 @@ function SubmissionView({ sub }: { sub: NonNullable<GroupAssignmentView["my_grou
   return (
     <div className="mt-4 border-t border-border pt-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="text-sm inline-flex items-center gap-2">
+        <div className="inline-flex items-center gap-2 text-sm">
           <Lock className="h-4 w-4 text-emerald-600" />
           <span className="font-medium text-primary">Imetumwa:</span>
           <span className="font-mono text-xs">{sub.file_name}</span>
         </div>
         <div className="text-xs text-muted-foreground">{new Date(sub.submitted_at).toLocaleString()}</div>
       </div>
+      {sub.participants.length > 0 && (
+        <div className="mt-2 text-xs text-muted-foreground">
+          <span className="font-semibold text-primary">Washiriki:</span>{" "}
+          {sub.participants.map((p) => `${p.full_name} (${p.reg_number})`).join(", ")}
+        </div>
+      )}
       {typeof sub.ai_score === "number" && (
         <div className={`mt-3 flex items-start gap-2 rounded-lg border px-3 py-2 text-xs ${aiHigh ? "border-destructive/40 bg-destructive/10 text-destructive" : "border-border bg-background text-muted-foreground"}`}>
           <Sparkles className="mt-0.5 h-3.5 w-3.5" />
@@ -362,85 +401,5 @@ function SubmissionView({ sub }: { sub: NonNullable<GroupAssignmentView["my_grou
         <div className="mt-2 text-xs text-muted-foreground">Bado haijamarkiwa.</div>
       )}
     </div>
-  );
-}
-
-function CreateGroupDialog({ open, onClose, assignmentId, assignmentTitle, onCreated }: {
-  open: boolean; onClose: () => void;
-  assignmentId: string; assignmentTitle: string; onCreated: () => void;
-}) {
-  const fetchClassmates = useServerFn(listMyClassmates);
-  const create = useServerFn(createGroup);
-  const classmates = useQuery({ queryKey: ["classmates"], queryFn: () => fetchClassmates(), enabled: open });
-  const [name, setName] = useState("");
-  const [q, setQ] = useState("");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [saving, setSaving] = useState(false);
-
-  const list = classmates.data ?? [];
-  const filtered = list.filter((s) => !q || s.full_name.toLowerCase().includes(q.toLowerCase()) || s.reg_number.toLowerCase().includes(q.toLowerCase()));
-
-  function toggle(id: string) {
-    setSelected((s) => {
-      const n = new Set(s);
-      if (n.has(id)) n.delete(id); else n.add(id);
-      return n;
-    });
-  }
-
-  async function submit() {
-    if (!name.trim()) return toast.error("Jina la group linahitajika");
-    if (selected.size < 1) return toast.error("Chagua angalau mwanachama mmoja");
-    setSaving(true);
-    try {
-      const res = await create({ data: { assignment_id: assignmentId, name: name.trim(), member_ids: Array.from(selected) } });
-      if (!res.ok) toast.error(res.error);
-      else { toast.success("Group imeundwa. Subiri wanachama wakonfirm."); setName(""); setSelected(new Set()); onCreated(); }
-    } finally { setSaving(false); }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle>Unda Group — {assignmentTitle}</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label>Jina la Group</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Team Alpha" />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Wanachama ({selected.size} wamechaguliwa)</Label>
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tafuta jina au reg number..." />
-            <div className="max-h-64 overflow-y-auto rounded-lg border border-border">
-              {classmates.isLoading ? (
-                <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin" /></div>
-              ) : filtered.length === 0 ? (
-                <p className="py-6 text-center text-xs text-muted-foreground">Hakuna wanafunzi.</p>
-              ) : (
-                <ul className="divide-y divide-border">
-                  {filtered.map((s) => (
-                    <li key={s.id}>
-                      <button type="button" onClick={() => toggle(s.id)} className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-muted/50 ${selected.has(s.id) ? "bg-primary/5" : ""}`}>
-                        <div>
-                          <div className="font-medium">{s.full_name}</div>
-                          <div className="text-xs font-mono text-muted-foreground">{s.reg_number}</div>
-                        </div>
-                        {selected.has(s.id) && <CheckCircle2 className="h-4 w-4 text-primary" />}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={submit} disabled={saving}>
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Unda"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
