@@ -1,51 +1,63 @@
-# Group Assignment System + AI-Check Marking
+# Simba Legal Academy — Overhaul
 
-## Scope (Phase 2)
+## 1) Home Page (rewrite kabisa)
+Fuata picha iliyoupload:
+- **Header**: logo + "Simba Legal Academy / LEARN · RESEARCH · SUBMIT", nav (Home, Individual, Group, Student Registration), CTA (Student Login, Admin).
+- **Hero split**: kushoto — badge "Assignment Management System", H1 kubwa "Simba Legal Academy" (gold accent kwa "Academy"), slogan `Learn • Research • Submit • Succeed`, paragraph, buttons (Anza Kujisajili, Individual Assignment). Kulia — hero image ya library + 3 glass cards zinazo-elea (Individual / Group / Registration).
+- **Stats bar**: 4 cards (2,500+ Wanafunzi, 8,750+ Assignments, 1,200+ Makundi, 98% Mafanikio) juu ya white rounded surface.
+- **Feature strip**: Usalama wa Juu, Rahisi & Haraka, Taarifa Sahihi, Msaada 24/7.
+- **Founder section** + footer "Designed & Developed by Viwango Software" (tayari ipo — endelea nayo).
 
-### 1. Database (migration mpya)
-Ongeza jedwali kwenye Lovable Cloud:
-- `groups` — `name`, `course_id`, `academic_year_id`, `leader_student_id`, `assignment_id` (nullable — group inaweza kutumika kwa assignments nyingi za course/year hiyo, au ni per-assignment. **Naipendekeza per-assignment** ili submission lock iwe rahisi).
-- `group_members` — `group_id`, `student_id`, `status` (`pending` / `confirmed` / `declined`), `confirmed_at`.
-- `group_submissions` — `group_id`, `assignment_id`, `file_path`, `file_name`, `submitted_at`, `submitted_by_student_id`, `marks`, `remarks`, `ai_score`, `ai_reason`, `marked_at`.
-- Ongeza `type` (`individual` | `group`) kwenye `assignments`.
-- Ongeza `locked` boolean kwenye `submissions` (individual) — inakuwa true baada ya submit; hairuhusiwi kubadilisha.
-- Realtime: `ALTER PUBLICATION supabase_realtime ADD TABLE group_members, groups, group_submissions`.
+## 2) Registration — ondoa Exam Number na Last Name
+Fields mpya: Full Name, Reg Number, Phone, Academic Year, Course.
+Reg Number = unique identifier.
 
-### 2. Student flow — Group Assignment (`/group-assignment`)
-- Login sawa na individual (Exam # + Last Name), au tumia session iliyopo.
-- **Leader anaunda group**: chagua assignment ya `type = group` (dropdown ikichuja kwa course + year yake), aweke jina la group, aongeze reg numbers za wanachama. Kila mmoja ana-row `pending`.
-- **Wanachama wanaona ombi**: kwenye dashboard, "Umealikwa kwenye group X" → Confirm / Decline.
-- **Live presence**: Supabase Realtime channel `group:{id}` na `presenceState()` — kila mtu aliye kwenye ukurasa anaonekana kwa green dot. Confirmation status pia inaonyeshwa (Amejoin ✓ / Bado).
-- **Submit lock**: Leader pekee anaona kitufe cha Upload, na kinawaka tu wakati **wanachama wote wame-confirm** na **deadline haijapita**. Baada ya submit, group inafungwa (`group_submissions` inaingizwa; UI inaonyesha "Imetumwa" na kuficha upload). Hakuna re-submit.
+## 3) Login — Reg Number pekee
+Ingiza Reg Number → dashboard. Recovery: simu → Reg Number.
+Update `students.functions.ts` `studentLogin` na `recoverExamNumber` → `recoverRegNumber`.
 
-### 3. Individual submission lock
-Baada ya kutuma, mfumo hauruhusu tena kuedit/re-upload (badilisha logic ya sasa ya "replace" iwe "one-shot", `locked=true`).
+## 4) Group Assignment — auto-match kwa assignment
+Muundo mpya:
+- Mwanafunzi anachagua **Assignment (group kind)** + Course + Year + anaingiza Reg Number.
+- Mfumo unamweka kwenye assignment hiyo. **Wote walio-join assignment hiyo** kutoka course/year hiyo = wenza wake automatiki (no leader, no manual invite).
+- Anaona list ya wenza + hali yao (live/offline via Realtime presence).
 
-### 4. AI-check + Marking (individual & group)
-- Wakati wa submit (individual au group): server ina-extract text kutoka PDF (pdfjs) au DOCX (mammoth), inaituma kwa **Lovable AI Gateway** (`google/gemini-2.5-flash`, bure) na prompt: "Kadiria asilimia ya uwezekano kuwa maandishi haya yameandikwa na AI, toa `ai_score` (0-100) na `ai_reason` (Kiswahili, sentensi 1-2)". Matokeo yanahifadhiwa kwenye submission.
-- **Admin Marking Dialog** (mpya, kwa individual + group):
-  - Onyesha AI score + reason juu (badge nyekundu ikiwa >60%).
-  - Preview ya kazi (signed URL kwenye `<iframe>` kwa PDF).
-  - Fomu: `marks` (0-100), `remarks` (textarea kubwa yenye rich text bullets: Nzuri / Marekebisho / Kosa), tick za haraka ("Copy detected", "Muundo mzuri", "Hoja dhaifu") zinaingiza template kwenye remarks.
-  - Save → inarekodi `marked_at`, `marks`, `remarks`.
-- Mwanafunzi anaona alama + remarks + AI note kwenye dashboard yake baada ya kumarking. Kazi ya asili (file) inabaki kama ilivyo; annotations zote ni mfumoni (kama ulivyokubaliana kwa "sahihisha ndani ya mfumo").
+## 5) Group Chat (kabla ya submission)
+- Realtime chat channel per (assignment_id, course_id, year_id) group.
+- Ujumbe unahifadhiwa kwenye table mpya `group_chat_messages`.
+- Yeyote aliyetuma **≥1 ujumbe** = "alichangia" (`participated=true`).
+- Kabla ya kutuma kazi, UI inaonyesha "Wachangiaji: N" na list ya reg numbers zilizochangia.
 
-### 5. Admin panel polish
-- Tab mpya **Assignments**: chagua `type` (Individual / Group) wakati wa kuunda.
-- Tab mpya **Groups**: orodha ya groups zote, wanachama, status, submission status. Filter by course/year/assignment.
-- Submissions view: tabs za Individual / Group, kila row ina AI badge, Marks button, Download button.
-- CSV export: kwa group, kila mwanachama anapata row yenye marks sawa + AI score ya group.
+## 6) Submission — credit kwa wachangiaji tu
+- Mtu yeyote wa group anaweza upload kazi (mara moja kwa group).
+- Mfumo unarekodi **wachangiaji wa chat wakati wa submission** kama waliofanya kazi (snapshot ya reg numbers waliochat kabla ya submit).
+- Admin panel inaonyesha kwenye group submission: "Waliochangia" (green tick) vs "Hawakuchangia" (gray) — marks zinawaenda waliochangia tu kwenye CSV export.
+
+## 7) Database changes
+```sql
+-- Ondoa dependency ya exam_number/last_name kwenye login (columns zibaki kwa admin reference)
+-- Table mpya:
+CREATE TABLE group_chat_messages (
+  id uuid PK, assignment_id uuid, course_id uuid, academic_year_id uuid,
+  student_id uuid, reg_number text, full_name text, message text, created_at
+);
+-- Ongeza column kwa group_submissions:
+ALTER TABLE group_submissions ADD COLUMN participants jsonb; -- [{student_id, reg_number, full_name}]
+-- Enable realtime kwa group_chat_messages
+```
+Tables za zamani `groups`, `group_members` — sitazifuta (backward compat), lakini mtiririko mpya hautazitumia.
+
+## 8) Files zitakazobadilika
+- `src/routes/index.tsx` — home rewrite.
+- `src/routes/register.tsx` — ondoa exam/last name.
+- `src/routes/login.tsx` — reg number pekee.
+- `src/routes/group-assignment.tsx` — auto-match flow + chat panel.
+- `src/lib/student.functions.ts` — new login/register/recovery.
+- `src/lib/group.functions.ts` — auto-join, chat send/list, submit-with-participants.
+- `src/routes/admin.tsx` — group submissions dialog: onyesha participants.
+- Migration mpya: `group_chat_messages` + `participants` column + realtime.
 
 ## Technical notes
-- AI check: `LOVABLE_API_KEY` (tayari ipo). Endpoint `https://ai.gateway.lovable.dev/v1/chat/completions`. Model default `google/gemini-2.5-flash`.
-- Text extraction: `pdf-parse` haitegemei Node native — badala yake tumia `pdfjs-dist/legacy/build/pdf.mjs` (Worker-safe) kwa PDF, na `mammoth` kwa DOCX. Kama extraction ikifeli, hifadhi `ai_score = null, ai_reason = "Haikuweza kusomeka"`.
-- Realtime presence: hukumbi RLS peke yake ni sawa kwa sababu channel ni per-group; ongeza SELECT policies kwa `group_members` ili kila mtu aone group lake tu. Kwa mfumo huu (bila Supabase Auth ya wanafunzi), tutatumia service-role kwa reads na broadcast presence kwa channel bila DB filter (client-side filter by student session).
-
-## Migration order
-1. Migration ya schema + realtime publication + `type` + `locked`.
-2. Server functions: `group.functions.ts` (create/confirm/decline/list/submit) + upanuzi wa `student.functions.ts` (individual lock) + upanuzi wa `admin.functions.ts` (mark with AI, list group submissions, CSV).
-3. UI: rewrite `src/routes/group-assignment.tsx`, sasisha `src/routes/individual-assignment.tsx` (lock UI + AI badge kwa mwanafunzi), sasisha `src/routes/admin.tsx` (Assignments type=group, Groups tab, marking dialog v2).
-
-## Out of scope (kwa turn hii)
-- Kuandika ticks/marks NDANI ya PDF/Word file yenyewe (utakubaliana kuwa remarks ziko mfumoni).
-- Notifications za SMS/email (in-app tu).
+- Chat: Supabase Realtime `postgres_changes` subscription + presence kwa live indicator.
+- Reg Number ya login inatafutwa kwenye `students` table; session iko vile vile (`sla_student` cookie).
+- Home page — semantic tokens tu (navy/gold tayari zipo kwenye styles.css).
