@@ -304,7 +304,7 @@ export const submitGroupAssignment = createServerFn({ method: "POST" })
       .eq("course_id", grp.course_id).eq("academic_year_id", grp.academic_year_id);
     const chatterIds = new Set<string>();
     (chatSenders ?? []).forEach((r) => { if (r.student_id) chatterIds.add(r.student_id as string); });
-    chatterIds.add(s.studentId);
+    chatterIds.add(s.studentId as string);
 
     const { data: memberRows } = await supabase.from("group_members")
       .select("student_id, student:students(full_name, reg_number)").eq("group_id", grp.id);
