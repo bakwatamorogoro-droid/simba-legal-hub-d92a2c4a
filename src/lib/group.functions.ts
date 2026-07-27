@@ -302,9 +302,10 @@ export const submitGroupAssignment = createServerFn({ method: "POST" })
     const { data: chatSenders } = await supabase.from("group_chat_messages")
       .select("student_id").eq("assignment_id", grp.assignment_id)
       .eq("course_id", grp.course_id).eq("academic_year_id", grp.academic_year_id);
-    const chatterIds = new Set((chatSenders ?? []).map((r) => r.student_id as string));
-    // Always include submitter
+    const chatterIds = new Set<string>();
+    (chatSenders ?? []).forEach((r) => { if (r.student_id) chatterIds.add(r.student_id as string); });
     chatterIds.add(s.studentId);
+
     const { data: memberRows } = await supabase.from("group_members")
       .select("student_id, student:students(full_name, reg_number)").eq("group_id", grp.id);
     const participants = (memberRows ?? [])
