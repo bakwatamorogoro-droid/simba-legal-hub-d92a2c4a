@@ -332,15 +332,29 @@ export const listSubmissionsForAssignment = createServerFn({ method: "POST" })
     return (rows as unknown as SubmissionRow[]) ?? [];
   });
 
+const annotationSchema = z.array(
+  z.object({
+    type: z.enum(["tick", "cross", "note"]),
+    text: z.string().trim().min(1).max(500),
+    points: z.number().min(-100).max(100).nullable().optional(),
+  }),
+).max(100);
+
+const markSchema = z.object({
+  id: z.string().uuid(),
+  marks: z.number().min(0).max(100),
+  remarks: z.string().max(4000),
+  annotations: annotationSchema.optional().default([]),
+});
+
 export const markSubmission = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string; marks: number; remarks: string }) =>
-    z.object({ id: z.string().uuid(), marks: z.number().min(0).max(100), remarks: z.string().max(4000) }).parse(d),
-  )
+  .inputValidator((d) => markSchema.parse(d))
   .handler(async ({ data }) => {
     await requireAdmin();
     const supabase = await getServiceClient();
     const { error } = await supabase.from("submissions").update({
-      marks: data.marks, remarks: data.remarks, marked_at: new Date().toISOString(),
+      marks: data.marks, remarks: data.remarks, annotations: data.annotations ?? [],
+      marked_at: new Date().toISOString(),
     }).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };

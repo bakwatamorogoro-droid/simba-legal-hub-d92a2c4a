@@ -1,0 +1,2 @@
+ALTER TABLE public.submissions ADD COLUMN IF NOT EXISTS annotations jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE public.group_submissions ADD COLUMN IF NOT EXISTS annotations jsonb NOT NULL DEFAULT '[]'::jsonb;

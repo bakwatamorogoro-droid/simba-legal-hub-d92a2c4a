@@ -9,7 +9,6 @@ const links = [
   { to: "/group-assignment", label: "Group Assignment" },
   { to: "/register", label: "Student Registration" },
   { to: "/login", label: "Student Login" },
-  { to: "/admin", label: "Admin" },
 ] as const;
 
 export function SiteHeader() {

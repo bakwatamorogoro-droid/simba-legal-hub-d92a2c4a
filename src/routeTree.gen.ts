@@ -9,13 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as StudentRouteImport } from './routes/student'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndividualAssignmentRouteImport } from './routes/individual-assignment'
 import { Route as GroupAssignmentRouteImport } from './routes/group-assignment'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as MarkedPaperKindIdRouteImport } from './routes/marked-paper.$kind.$id'
 
+const StudentRoute = StudentRouteImport.update({
+  id: '/student',
+  path: '/student',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -46,6 +53,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MarkedPaperKindIdRoute = MarkedPaperKindIdRouteImport.update({
+  id: '/marked-paper/$kind/$id',
+  path: '/marked-paper/$kind/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +66,8 @@ export interface FileRoutesByFullPath {
   '/individual-assignment': typeof IndividualAssignmentRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/student': typeof StudentRoute
+  '/marked-paper/$kind/$id': typeof MarkedPaperKindIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +76,8 @@ export interface FileRoutesByTo {
   '/individual-assignment': typeof IndividualAssignmentRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/student': typeof StudentRoute
+  '/marked-paper/$kind/$id': typeof MarkedPaperKindIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +87,8 @@ export interface FileRoutesById {
   '/individual-assignment': typeof IndividualAssignmentRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/student': typeof StudentRoute
+  '/marked-paper/$kind/$id': typeof MarkedPaperKindIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,6 +99,8 @@ export interface FileRouteTypes {
     | '/individual-assignment'
     | '/login'
     | '/register'
+    | '/student'
+    | '/marked-paper/$kind/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -89,6 +109,8 @@ export interface FileRouteTypes {
     | '/individual-assignment'
     | '/login'
     | '/register'
+    | '/student'
+    | '/marked-paper/$kind/$id'
   id:
     | '__root__'
     | '/'
@@ -97,6 +119,8 @@ export interface FileRouteTypes {
     | '/individual-assignment'
     | '/login'
     | '/register'
+    | '/student'
+    | '/marked-paper/$kind/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -106,10 +130,19 @@ export interface RootRouteChildren {
   IndividualAssignmentRoute: typeof IndividualAssignmentRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  StudentRoute: typeof StudentRoute
+  MarkedPaperKindIdRoute: typeof MarkedPaperKindIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/student': {
+      id: '/student'
+      path: '/student'
+      fullPath: '/student'
+      preLoaderRoute: typeof StudentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
@@ -152,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/marked-paper/$kind/$id': {
+      id: '/marked-paper/$kind/$id'
+      path: '/marked-paper/$kind/$id'
+      fullPath: '/marked-paper/$kind/$id'
+      preLoaderRoute: typeof MarkedPaperKindIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -162,7 +202,19 @@ const rootRouteChildren: RootRouteChildren = {
   IndividualAssignmentRoute: IndividualAssignmentRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  StudentRoute: StudentRoute,
+  MarkedPaperKindIdRoute: MarkedPaperKindIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
