@@ -218,5 +218,118 @@ export const submitMyAssignment = createServerFn({ method: "POST" })
     return { ok: true as const, ai };
   });
 
+// ---------- Marked paper (softcopy ya kuprint) ----------
+export type Annotation = { type: "tick" | "cross" | "note"; text: string; points?: number | null };
+
+export type MarkedPaper = {
+  kind: "individual" | "group";
+  student_name: string;
+  reg_number: string;
+  group_name: string | null;
+  members: Array<{ full_name: string; reg_number: string }>;
+  assignment_title: string;
+  course: string | null;
+  academic_year: string | null;
+  file_name: string;
+  submitted_at: string;
+  marks: number | null;
+  remarks: string | null;
+  marked_at: string | null;
+  ai_score: number | null;
+  ai_reason: string | null;
+  annotations: Annotation[];
+};
+
+export const getMarkedPaper = createServerFn({ method: "POST" })
+  .inputValidator((d: { submission_id: string; kind: "individual" | "group" }) =>
+    z.object({ submission_id: z.string().uuid(), kind: z.enum(["individual", "group"]) }).parse(d),
+  )
+  .handler(async ({ data }): Promise<{ ok: false; error: string } | { ok: true; paper: MarkedPaper }> => {
+    const s = await requireStudent();
+    const supabase = await getServiceClient();
+
+    if (data.kind === "individual") {
+      const { data: sub } = await supabase
+        .from("submissions")
+        .select("id, student_id, file_name, submitted_at, marks, remarks, marked_at, ai_score, ai_reason, annotations, assignment:assignments(title, course:courses(name), academic_year:academic_years(name)), student:students(full_name, reg_number)")
+        .eq("id", data.submission_id)
+        .maybeSingle();
+      const row = sub as unknown as {
+        student_id: string; file_name: string; submitted_at: string; marks: number | null;
+        remarks: string | null; marked_at: string | null; ai_score: number | null; ai_reason: string | null;
+        annotations: Annotation[] | null;
+        assignment: { title: string; course: { name: string } | null; academic_year: { name: string } | null } | null;
+        student: { full_name: string; reg_number: string } | null;
+      } | null;
+      if (!row) return { ok: false as const, error: "Kazi haipatikani" };
+      if (row.student_id !== s.studentId) return { ok: false as const, error: "Huruhusiwi kuona kazi hii" };
+      return {
+        ok: true as const,
+        paper: {
+          kind: "individual",
+          student_name: row.student?.full_name ?? s.fullName,
+          reg_number: row.student?.reg_number ?? s.regNumber,
+          group_name: null,
+          members: [],
+          assignment_title: row.assignment?.title ?? "Assignment",
+          course: row.assignment?.course?.name ?? null,
+          academic_year: row.assignment?.academic_year?.name ?? null,
+          file_name: row.file_name,
+          submitted_at: row.submitted_at,
+          marks: row.marks,
+          remarks: row.remarks,
+          marked_at: row.marked_at,
+          ai_score: row.ai_score,
+          ai_reason: row.ai_reason,
+          annotations: row.annotations ?? [],
+        },
+      };
+    }
+
+    const { data: gsub } = await supabase
+      .from("group_submissions")
+      .select("id, group_id, file_name, submitted_at, marks, remarks, marked_at, ai_score, ai_reason, annotations, assignment:assignments(title, course:courses(name), academic_year:academic_years(name)), group:groups(name)")
+      .eq("id", data.submission_id)
+      .maybeSingle();
+    const g = gsub as unknown as {
+      group_id: string; file_name: string; submitted_at: string; marks: number | null;
+      remarks: string | null; marked_at: string | null; ai_score: number | null; ai_reason: string | null;
+      annotations: Annotation[] | null;
+      assignment: { title: string; course: { name: string } | null; academic_year: { name: string } | null } | null;
+      group: { name: string } | null;
+    } | null;
+    if (!g) return { ok: false as const, error: "Kazi haipatikani" };
+
+    const { data: mems } = await supabase
+      .from("group_members")
+      .select("student_id, student:students(full_name, reg_number)")
+      .eq("group_id", g.group_id);
+    const memberRows = (mems as unknown as Array<{ student_id: string; student: { full_name: string; reg_number: string } | null }>) ?? [];
+    if (!memberRows.some((m) => m.student_id === s.studentId)) {
+      return { ok: false as const, error: "Huruhusiwi kuona kazi hii" };
+    }
+    return {
+      ok: true as const,
+      paper: {
+        kind: "group",
+        student_name: s.fullName,
+        reg_number: s.regNumber,
+        group_name: g.group?.name ?? null,
+        members: memberRows.filter((m) => m.student).map((m) => ({ full_name: m.student!.full_name, reg_number: m.student!.reg_number })),
+        assignment_title: g.assignment?.title ?? "Group Assignment",
+        course: g.assignment?.course?.name ?? null,
+        academic_year: g.assignment?.academic_year?.name ?? null,
+        file_name: g.file_name,
+        submitted_at: g.submitted_at,
+        marks: g.marks,
+        remarks: g.remarks,
+        marked_at: g.marked_at,
+        ai_score: g.ai_score,
+        ai_reason: g.ai_reason,
+        annotations: g.annotations ?? [],
+      },
+    };
+  });
+
 // Unused normalize (kept to avoid unused-var lint if imported later)
 void normalize;
