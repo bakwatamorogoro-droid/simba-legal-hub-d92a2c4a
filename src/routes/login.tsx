@@ -47,7 +47,7 @@ function LoginForm({ onForgot }: { onForgot: () => void }) {
     toast.success(`Karibu, ${res.full_name}`);
     await qc.invalidateQueries({ queryKey: ["student-session"] });
     router.invalidate();
-    navigate({ to: "/individual-assignment" });
+    navigate({ to: "/student" });
   }
 
   return (

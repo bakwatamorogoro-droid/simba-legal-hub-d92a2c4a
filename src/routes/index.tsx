@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { FileText, Users, ArrowRight, GraduationCap, ShieldCheck, Scale, Quote, Code2, LogIn, BookOpen, Award, Sparkles } from "lucide-react";
+import { FileText, Users, ArrowRight, GraduationCap, Scale, Quote, Code2, LogIn, BookOpen, Award, Sparkles } from "lucide-react";
 import hero from "@/assets/hero.jpg";
 import founder from "@/assets/founder.jpg";
 import { Button } from "@/components/ui/button";
@@ -99,22 +99,6 @@ function Landing() {
               </div>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* Admin CTA */}
-      <section className="mx-auto max-w-7xl px-6 py-14">
-        <div className="rounded-2xl border border-gold/30 bg-gradient-to-br from-muted/60 to-background p-8 shadow-elegant sm:flex sm:items-center sm:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-gold">
-              <ShieldCheck className="h-3.5 w-3.5" /> Admin Access
-            </div>
-            <h3 className="mt-2 font-display text-2xl text-primary">Admin Panel</h3>
-            <p className="mt-1 text-sm text-muted-foreground">Simamia wanafunzi, courses, academic years, na assignments.</p>
-          </div>
-          <Button asChild size="lg" className="mt-4 bg-primary text-primary-foreground sm:mt-0">
-            <Link to="/admin">Ingia Admin <ArrowRight className="ml-2 h-4 w-4" /></Link>
-          </Button>
         </div>
       </section>
 
