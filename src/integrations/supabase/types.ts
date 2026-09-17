@@ -219,6 +219,7 @@ export type Database = {
         Row: {
           ai_reason: string | null
           ai_score: number | null
+          annotations: Json
           assignment_id: string
           file_name: string
           file_path: string
@@ -234,6 +235,7 @@ export type Database = {
         Insert: {
           ai_reason?: string | null
           ai_score?: number | null
+          annotations?: Json
           assignment_id: string
           file_name: string
           file_path: string
@@ -249,6 +251,7 @@ export type Database = {
         Update: {
           ai_reason?: string | null
           ai_score?: number | null
+          annotations?: Json
           assignment_id?: string
           file_name?: string
           file_path?: string
@@ -405,6 +408,7 @@ export type Database = {
         Row: {
           ai_reason: string | null
           ai_score: number | null
+          annotations: Json
           assignment_id: string
           file_name: string
           file_path: string
@@ -419,6 +423,7 @@ export type Database = {
         Insert: {
           ai_reason?: string | null
           ai_score?: number | null
+          annotations?: Json
           assignment_id: string
           file_name: string
           file_path: string
@@ -433,6 +438,7 @@ export type Database = {
         Update: {
           ai_reason?: string | null
           ai_score?: number | null
+          annotations?: Json
           assignment_id?: string
           file_name?: string
           file_path?: string
