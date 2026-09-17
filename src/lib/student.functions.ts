@@ -267,8 +267,8 @@ export const getMarkedPaper = createServerFn({ method: "POST" })
         ok: true as const,
         paper: {
           kind: "individual",
-          student_name: row.student?.full_name ?? s.fullName,
-          reg_number: row.student?.reg_number ?? s.regNumber,
+          student_name: row.student?.full_name ?? s.fullName ?? "",
+          reg_number: row.student?.reg_number ?? s.regNumber ?? "",
           group_name: null,
           members: [],
           assignment_title: row.assignment?.title ?? "Assignment",
@@ -312,8 +312,8 @@ export const getMarkedPaper = createServerFn({ method: "POST" })
       ok: true as const,
       paper: {
         kind: "group",
-        student_name: s.fullName,
-        reg_number: s.regNumber,
+        student_name: s.fullName ?? "",
+        reg_number: s.regNumber ?? "",
         group_name: g.group?.name ?? null,
         members: memberRows.filter((m) => m.student).map((m) => ({ full_name: m.student!.full_name, reg_number: m.student!.reg_number })),
         assignment_title: g.assignment?.title ?? "Group Assignment",
