@@ -617,31 +617,67 @@ function AiBadge({ score, reason }: { score: number | null; reason: string | nul
   );
 }
 
-function MarkingBox({ marks, remarks, onChange }: { marks: string; remarks: string; onChange: (m: string, r: string) => void }) {
-  function append(prefix: string, text: string) {
-    const line = `${prefix} ${text}`;
-    onChange(marks, remarks ? `${remarks}\n${line}` : line);
+export type Annotation = { type: "tick" | "cross" | "note"; text: string; points?: number | null };
+
+function MarkingBox({
+  marks, remarks, annotations, onChange,
+}: {
+  marks: string; remarks: string; annotations: Annotation[];
+  onChange: (m: string, r: string, a: Annotation[]) => void;
+}) {
+  const [draft, setDraft] = useState("");
+  const [points, setPoints] = useState("");
+
+  function add(type: Annotation["type"]) {
+    const text = draft.trim() || (type === "tick" ? "Sahihi / Correct" : type === "cross" ? "Kosa / Wrong" : "Maelezo / Note");
+    const p = points.trim() === "" ? null : Number(points);
+    const next = [...annotations, { type, text, points: isNaN(p as number) ? null : p }];
+    onChange(marks, remarks, next);
+    setDraft(""); setPoints("");
   }
+  function remove(i: number) {
+    onChange(marks, remarks, annotations.filter((_, idx) => idx !== i));
+  }
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <Input className="h-8 w-24" type="number" min={0} max={100} placeholder="0-100" value={marks} onChange={(e) => onChange(e.target.value, remarks)} />
+        <Input className="h-8 w-24" type="number" min={0} max={100} placeholder="0-100" value={marks} onChange={(e) => onChange(e.target.value, remarks, annotations)} />
         <span className="text-xs text-muted-foreground">/ 100</span>
-        <div className="ml-auto flex gap-1">
-          <button type="button" onClick={() => append("✅", "Sahihi / Correct")}
-            className="inline-flex items-center gap-1 rounded-md border border-emerald-500/40 bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">
-            ✓ Tick
-          </button>
-          <button type="button" onClick={() => append("❌", "Kosa / Wrong")}
-            className="inline-flex items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1 text-xs font-semibold text-destructive hover:bg-destructive/15">
-            ✗ Cross
-          </button>
-        </div>
       </div>
-      <Textarea rows={4} placeholder="Remarks / Marekebisho..." value={remarks} onChange={(e) => onChange(marks, e.target.value)} />
+
+      <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+        <div className="mb-2 text-xs font-semibold text-destructive">Peni Nyekundu — tiki, kosa au maelezo</div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Input className="h-8 min-w-[180px] flex-1" placeholder="Andika maelezo ya alama hii..." value={draft} onChange={(e) => setDraft(e.target.value)} />
+          <Input className="h-8 w-20" type="number" placeholder="pts" value={points} onChange={(e) => setPoints(e.target.value)} />
+          <button type="button" onClick={() => add("tick")}
+            className="rounded-md border border-emerald-500/40 bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">✓ Tick</button>
+          <button type="button" onClick={() => add("cross")}
+            className="rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1 text-xs font-semibold text-destructive hover:bg-destructive/15">✗ Kosa</button>
+          <button type="button" onClick={() => add("note")}
+            className="rounded-md border border-border bg-background px-2 py-1 text-xs font-semibold hover:bg-muted">✎ Note</button>
+        </div>
+        {annotations.length > 0 && (
+          <ul className="mt-2 space-y-1">
+            {annotations.map((a, i) => (
+              <li key={i} className="flex items-center gap-2 rounded-md bg-background px-2 py-1 text-xs">
+                <span className={a.type === "tick" ? "text-emerald-600" : a.type === "cross" ? "text-destructive" : "text-muted-foreground"}>
+                  {a.type === "tick" ? "✓" : a.type === "cross" ? "✗" : "✎"}
+                </span>
+                <span className="flex-1">{a.text}</span>
+                {typeof a.points === "number" && <span className="font-semibold">{a.points > 0 ? `+${a.points}` : a.points}</span>}
+                <button type="button" onClick={() => remove(i)} className="text-muted-foreground hover:text-destructive">×</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <Textarea rows={4} placeholder="Remarks / Marekebisho..." value={remarks} onChange={(e) => onChange(marks, e.target.value, annotations)} />
       <div className="flex flex-wrap gap-1">
         {AI_TEMPLATES.map((t) => (
-          <button key={t} type="button" onClick={() => onChange(marks, remarks ? `${remarks}\n• ${t}` : `• ${t}`)}
+          <button key={t} type="button" onClick={() => onChange(marks, remarks ? `${remarks}\n• ${t}` : `• ${t}`, annotations)}
             className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] hover:bg-muted">
             + {t.split(" ").slice(0, 3).join(" ")}…
           </button>
