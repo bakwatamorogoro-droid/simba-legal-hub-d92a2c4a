@@ -164,9 +164,12 @@ const studentSchema = z.object({
 });
 
 export const registerStudent = createServerFn({ method: "POST" })
-  .inputValidator((d) => studentSchema.parse(d))
+  .inputValidator((d) =>
+    studentSchema.extend({ password: z.string().min(6).max(72) }).parse(d),
+  )
   .handler(async ({ data }) => {
     const supabase = await getServiceClient();
+    const bcrypt = (await import("bcryptjs")).default;
     const payload = {
       full_name: data.full_name,
       reg_number: data.reg_number,
@@ -175,6 +178,7 @@ export const registerStudent = createServerFn({ method: "POST" })
       course_id: data.course_id,
       last_name: data.last_name ?? null,
       exam_number: data.exam_number ?? null,
+      password_hash: await bcrypt.hash(data.password, 10),
     };
     const { error } = await supabase.from("students").insert(payload);
     if (error) {
