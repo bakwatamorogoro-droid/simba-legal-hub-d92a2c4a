@@ -250,6 +250,11 @@ function AssignmentCard({ row, onChanged }: { row: Row; onChanged: () => void })
               {row.submission.remarks && (
                 <span className="whitespace-pre-wrap text-muted-foreground">Remarks: {row.submission.remarks}</span>
               )}
+              <Button asChild size="sm" variant="outline" className="ml-auto">
+                <Link to="/marked-paper/$kind/$id" params={{ kind: "individual", id: row.submission.id }}>
+                  <FileText className="mr-1 h-4 w-4" /> Ona karatasi yangu
+                </Link>
+              </Button>
             </div>
           ) : (
             <div className="mt-2 text-xs text-muted-foreground">Bado haijamarkiwa.</div>

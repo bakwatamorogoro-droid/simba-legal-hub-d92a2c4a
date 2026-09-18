@@ -396,6 +396,11 @@ function SubmissionView({ sub }: { sub: NonNullable<GroupAssignmentView["my_grou
             <Award className="h-4 w-4" /> {sub.marks}/100
           </span>
           {sub.remarks && <span className="whitespace-pre-wrap text-muted-foreground">Remarks: {sub.remarks}</span>}
+          <Button asChild size="sm" variant="outline" className="ml-auto">
+            <Link to="/marked-paper/$kind/$id" params={{ kind: "group", id: sub.id }}>
+              <Award className="mr-1 h-4 w-4" /> Ona karatasi ya group
+            </Link>
+          </Button>
         </div>
       ) : (
         <div className="mt-2 text-xs text-muted-foreground">Bado haijamarkiwa.</div>
