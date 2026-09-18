@@ -32,19 +32,33 @@ function normalize(s: string) {
 
 // ---------- Auth ----------
 export const studentLogin = createServerFn({ method: "POST" })
-  .inputValidator((d: { reg_number: string }) =>
-    z.object({ reg_number: z.string().trim().min(1).max(80) }).parse(d),
+  .inputValidator((d: { reg_number: string; password: string }) =>
+    z
+      .object({
+        reg_number: z.string().trim().min(1).max(80),
+        password: z.string().min(1).max(72),
+      })
+      .parse(d),
   )
   .handler(async ({ data }) => {
     const supabase = await getServiceClient();
     const { data: student } = await supabase
       .from("students")
-      .select("id, full_name, reg_number")
+      .select("id, full_name, reg_number, password_hash")
       .ilike("reg_number", data.reg_number.trim())
       .maybeSingle();
     if (!student) {
       return { ok: false as const, error: "Registration number haipo. Hakikisha umejisajili." };
     }
+    const bcrypt = (await import("bcryptjs")).default;
+    if (!student.password_hash) {
+      return {
+        ok: false as const,
+        error: "Huna password bado. Tumia 'Umesahau password' kuweka mpya.",
+      };
+    }
+    const okPass = await bcrypt.compare(data.password, student.password_hash as string);
+    if (!okPass) return { ok: false as const, error: "Password si sahihi." };
     const session = await getSession();
     await session.update({
       studentId: student.id as string,
