@@ -713,14 +713,14 @@ function IndividualSubmissionsDialog({ assignment, onClose }: { assignment: Assi
   });
 
   const [marking, setMarking] = useState<string | null>(null);
-  const [mForm, setMForm] = useState({ marks: "", remarks: "" });
+  const [mForm, setMForm] = useState<{ marks: string; remarks: string; annotations: Annotation[] }>({ marks: "", remarks: "", annotations: [] });
   const [previewUrl, setPreviewUrl] = useState<Record<string, string>>({});
 
   async function save(id: string) {
     const m = Number(mForm.marks);
     if (isNaN(m) || m < 0 || m > 100) return toast.error("Marks 0-100");
     try {
-      await doMark({ data: { id, marks: m, remarks: mForm.remarks } });
+      await doMark({ data: { id, marks: m, remarks: mForm.remarks, annotations: mForm.annotations } });
       toast.success("Marked"); setMarking(null); subs.refetch();
     } catch (err) { toast.error((err as Error).message); }
   }
@@ -798,7 +798,7 @@ function IndividualSubmissionsDialog({ assignment, onClose }: { assignment: Assi
                       </Button>
                       <Button variant="outline" size="sm" onClick={() => download(s.id)}><Download className="mr-1 h-4 w-4" /></Button>
                       {marking !== s.id && (
-                        <Button size="sm" onClick={() => { setMarking(s.id); setMForm({ marks: String(s.marks ?? ""), remarks: s.remarks ?? "" }); }}>
+                        <Button size="sm" onClick={() => { setMarking(s.id); setMForm({ marks: String(s.marks ?? ""), remarks: s.remarks ?? "", annotations: s.annotations ?? [] }); }}>
                           <Pencil className="mr-1 h-4 w-4" /> {marked ? "Edit" : "Mark"}
                         </Button>
                       )}
@@ -809,7 +809,7 @@ function IndividualSubmissionsDialog({ assignment, onClose }: { assignment: Assi
 
                   {marking === s.id ? (
                     <div className="mt-3 rounded-lg border border-border bg-muted/30 p-3">
-                      <MarkingBox marks={mForm.marks} remarks={mForm.remarks} onChange={(m, r) => setMForm({ marks: m, remarks: r })} />
+                      <MarkingBox marks={mForm.marks} remarks={mForm.remarks} annotations={mForm.annotations} onChange={(m, r, a) => setMForm({ marks: m, remarks: r, annotations: a })} />
                       <div className="mt-2 flex justify-end gap-2">
                         <Button variant="ghost" size="sm" onClick={() => setMarking(null)}>Cancel</Button>
                         <Button size="sm" onClick={() => save(s.id)}>Save</Button>
@@ -844,14 +844,14 @@ function GroupSubmissionsDialog({ assignment, onClose }: { assignment: Assignmen
   });
 
   const [marking, setMarking] = useState<string | null>(null);
-  const [mForm, setMForm] = useState({ marks: "", remarks: "" });
+  const [mForm, setMForm] = useState<{ marks: string; remarks: string; annotations: Annotation[] }>({ marks: "", remarks: "", annotations: [] });
   const [previewUrl, setPreviewUrl] = useState<Record<string, string>>({});
 
   async function save(id: string) {
     const m = Number(mForm.marks);
     if (isNaN(m) || m < 0 || m > 100) return toast.error("Marks 0-100");
     try {
-      await doMark({ data: { id, marks: m, remarks: mForm.remarks } });
+      await doMark({ data: { id, marks: m, remarks: mForm.remarks, annotations: mForm.annotations } });
       toast.success("Marked"); setMarking(null); subs.refetch();
     } catch (err) { toast.error((err as Error).message); }
   }
@@ -941,7 +941,7 @@ function GroupSubmissionsDialog({ assignment, onClose }: { assignment: Assignmen
                       </Button>
                       <Button variant="outline" size="sm" onClick={() => download(g.id)}><Download className="mr-1 h-4 w-4" /></Button>
                       {marking !== g.id && (
-                        <Button size="sm" onClick={() => { setMarking(g.id); setMForm({ marks: String(g.marks ?? ""), remarks: g.remarks ?? "" }); }}>
+                        <Button size="sm" onClick={() => { setMarking(g.id); setMForm({ marks: String(g.marks ?? ""), remarks: g.remarks ?? "", annotations: g.annotations ?? [] }); }}>
                           <Pencil className="mr-1 h-4 w-4" /> {marked ? "Edit" : "Mark"}
                         </Button>
                       )}
@@ -952,7 +952,7 @@ function GroupSubmissionsDialog({ assignment, onClose }: { assignment: Assignmen
 
                   {marking === g.id ? (
                     <div className="mt-3 rounded-lg border border-border bg-muted/30 p-3">
-                      <MarkingBox marks={mForm.marks} remarks={mForm.remarks} onChange={(m, r) => setMForm({ marks: m, remarks: r })} />
+                      <MarkingBox marks={mForm.marks} remarks={mForm.remarks} annotations={mForm.annotations} onChange={(m, r, a) => setMForm({ marks: m, remarks: r, annotations: a })} />
                       <div className="mt-2 flex justify-end gap-2">
                         <Button variant="ghost" size="sm" onClick={() => setMarking(null)}>Cancel</Button>
                         <Button size="sm" onClick={() => save(g.id)}>Save (kwa members wote)</Button>
