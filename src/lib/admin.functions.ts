@@ -316,6 +316,7 @@ type SubmissionRow = {
   id: string; assignment_id: string; file_path: string; file_name: string;
   submitted_at: string; marks: number | null; remarks: string | null; marked_at: string | null;
   ai_score: number | null; ai_reason: string | null;
+  annotations: Array<{ type: "tick" | "cross" | "note"; text: string; points?: number | null }>;
   student: { id: string; full_name: string; reg_number: string; last_name: string | null } | null;
 };
 
@@ -326,7 +327,7 @@ export const listSubmissionsForAssignment = createServerFn({ method: "POST" })
     const supabase = await getServiceClient();
     const { data: rows } = await supabase
       .from("submissions")
-      .select("id, assignment_id, file_path, file_name, submitted_at, marks, remarks, marked_at, ai_score, ai_reason, student:students(id, full_name, reg_number, last_name)")
+      .select("id, assignment_id, file_path, file_name, submitted_at, marks, remarks, marked_at, ai_score, ai_reason, annotations, student:students(id, full_name, reg_number, last_name)")
       .eq("assignment_id", data.assignment_id)
       .order("submitted_at", { ascending: false });
     return (rows as unknown as SubmissionRow[]) ?? [];
@@ -376,6 +377,7 @@ type GroupSubmissionRow = {
   id: string; group_id: string; assignment_id: string; file_path: string; file_name: string;
   submitted_at: string; marks: number | null; remarks: string | null; marked_at: string | null;
   ai_score: number | null; ai_reason: string | null;
+  annotations: Array<{ type: "tick" | "cross" | "note"; text: string; points?: number | null }>;
   submitted_by_student_id: string;
   group: { id: string; name: string } | null;
   members: Array<{ full_name: string; reg_number: string; last_name: string | null; role: "leader" | "member" }>;
@@ -388,7 +390,7 @@ export const listGroupSubmissionsForAssignment = createServerFn({ method: "POST"
     const supabase = await getServiceClient();
     const { data: subs } = await supabase
       .from("group_submissions")
-      .select("id, group_id, assignment_id, file_path, file_name, submitted_at, marks, remarks, marked_at, ai_score, ai_reason, submitted_by_student_id, group:groups(id, name, leader_student_id)")
+      .select("id, group_id, assignment_id, file_path, file_name, submitted_at, marks, remarks, marked_at, ai_score, ai_reason, annotations, submitted_by_student_id, group:groups(id, name, leader_student_id)")
       .eq("assignment_id", data.assignment_id)
       .order("submitted_at", { ascending: false });
     const list = (subs as unknown as (GroupSubmissionRow & { group: { id: string; name: string; leader_student_id: string } | null })[]) ?? [];
