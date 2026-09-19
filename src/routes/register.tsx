@@ -106,6 +106,16 @@ function RegisterPage() {
                     </Select>
                   </Field>
                 </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Password">
+                    <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Angalau herufi 6" />
+                  </Field>
+                  <Field label="Thibitisha Password">
+                    <Input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Rudia password" />
+                  </Field>
+                </div>
+
+
 
                 <Button type="submit" disabled={saving} className="w-full bg-primary text-primary-foreground">
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Jisajili / Register"}
