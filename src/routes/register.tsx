@@ -22,8 +22,9 @@ function RegisterPage() {
   const { data, isLoading } = useQuery({ queryKey: ["cy"], queryFn: () => fetchOptions() });
 
   const [form, setForm] = useState({
-    full_name: "", reg_number: "", phone: "", academic_year_id: "", course_id: "",
+    full_name: "", reg_number: "", phone: "", academic_year_id: "", course_id: "", password: "",
   });
+  const [confirm, setConfirm] = useState("");
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState<{ reg_number: string } | null>(null);
 
@@ -32,6 +33,8 @@ function RegisterPage() {
     if (!form.full_name || !form.reg_number || !form.phone || !form.academic_year_id || !form.course_id) {
       return toast.error("Jaza sehemu zote / Fill all fields");
     }
+    if (form.password.length < 6) return toast.error("Password iwe na herufi 6 au zaidi");
+    if (form.password !== confirm) return toast.error("Password hazifanani");
     setSaving(true);
     const res = await doRegister({ data: form });
     setSaving(false);
@@ -39,6 +42,7 @@ function RegisterPage() {
     toast.success("Umesajiliwa kikamilifu!");
     setDone({ reg_number: form.reg_number });
   }
+
 
   return (
     <div className="min-h-screen bg-muted/30">
