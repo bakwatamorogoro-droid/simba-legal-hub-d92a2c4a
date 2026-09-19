@@ -99,8 +99,42 @@ export const recoverRegNumber = createServerFn({ method: "POST" })
     return { ok: true as const, reg_number: student.reg_number, full_name: student.full_name };
   });
 
+// Reset password using reg number + phone
+export const resetStudentPassword = createServerFn({ method: "POST" })
+  .inputValidator((d: { reg_number: string; phone: string; password: string }) =>
+    z
+      .object({
+        reg_number: z.string().trim().min(1).max(80),
+        phone: z.string().trim().min(5).max(30),
+        password: z.string().min(6).max(72),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const supabase = await getServiceClient();
+    const { data: student } = await supabase
+      .from("students")
+      .select("id, full_name, phone")
+      .ilike("reg_number", data.reg_number.trim())
+      .maybeSingle();
+    if (!student) return { ok: false as const, error: "Registration number haipo." };
+    const clean = (s: string) => s.replace(/[^0-9]/g, "").slice(-9);
+    if (clean((student.phone as string) ?? "") !== clean(data.phone)) {
+      return { ok: false as const, error: "Namba ya simu hailingani na usajili huu." };
+    }
+    const bcrypt = (await import("bcryptjs")).default;
+    const password_hash = await bcrypt.hash(data.password, 10);
+    const { error } = await supabase
+      .from("students")
+      .update({ password_hash })
+      .eq("id", student.id as string);
+    if (error) return { ok: false as const, error: "Imeshindikana kubadilisha password." };
+    return { ok: true as const, full_name: student.full_name as string };
+  });
+
 // Back-compat alias (existing imports may still reference it briefly)
 export const recoverExamNumber = recoverRegNumber;
+
 
 // ---------- Student portal ----------
 type MyAssignment = {
