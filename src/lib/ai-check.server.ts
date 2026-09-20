@@ -6,11 +6,8 @@ async function extractText(bytes: Uint8Array, fileName: string): Promise<string>
   const n = fileName.toLowerCase();
   try {
     if (n.endsWith(".pdf")) {
-      const { extractText, getDocumentProxy } = await import("unpdf");
-      const pdf = await getDocumentProxy(bytes);
-      const { text } = await extractText(pdf, { mergePages: true });
-      const t: unknown = text;
-      return typeof t === "string" ? t : Array.isArray(t) ? (t as string[]).join("\n") : "";
+      const { extractPdfText } = await import("./pdf-text.server");
+      return extractPdfText(bytes);
     }
     if (n.endsWith(".docx")) {
       const mammoth = await import("mammoth");
