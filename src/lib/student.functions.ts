@@ -249,10 +249,15 @@ export const submitMyAssignment = createServerFn({ method: "POST" })
     const { runAiCheck } = await import("./ai-check.server");
     const ai = await runAiCheck(bytes, data.file_name);
 
+    // Backup copy to Google Drive (best-effort; failure doesn't block submission)
+    const { mirrorToDrive } = await import("./drive.server");
+    const drive = await mirrorToDrive(bytes, data.file_name, guessContentType(data.file_name), "Submissions");
+
     if (existing) {
       const { error } = await supabase.from("submissions").update({
         file_path: path, file_name: data.file_name, submitted_at: new Date().toISOString(),
         locked: true, ai_score: ai.ai_score, ai_reason: ai.ai_reason,
+        drive_file_id: drive?.file_id ?? null, drive_url: drive?.url ?? null,
       }).eq("id", existing.id);
       if (error) return { ok: false as const, error: error.message };
     } else {
@@ -260,6 +265,7 @@ export const submitMyAssignment = createServerFn({ method: "POST" })
         assignment_id: assignment.id, student_id: s.studentId,
         file_path: path, file_name: data.file_name, locked: true,
         ai_score: ai.ai_score, ai_reason: ai.ai_reason,
+        drive_file_id: drive?.file_id ?? null, drive_url: drive?.url ?? null,
       });
       if (error) return { ok: false as const, error: error.message };
     }

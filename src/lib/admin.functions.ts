@@ -276,20 +276,28 @@ export const createAssignment = createServerFn({ method: "POST" })
     const supabase = await getServiceClient();
     let question_path: string | null = null;
     let question_name: string | null = null;
+    let drive_file_id: string | null = null;
+    let drive_url: string | null = null;
     if (data.question_base64 && data.question_name) {
+      const bytes = decodeBase64(data.question_base64);
       const path = `questions/${crypto.randomUUID()}-${data.question_name.replace(/[^\w.-]/g, "_")}`;
-      const { error } = await supabase.storage.from("assignment-files").upload(path, decodeBase64(data.question_base64), {
+      const { error } = await supabase.storage.from("assignment-files").upload(path, bytes, {
         contentType: guessContentType(data.question_name),
         upsert: false,
       });
       if (error) throw new Error(error.message);
       question_path = path;
       question_name = data.question_name;
+      // Backup copy to Google Drive (best-effort)
+      const { mirrorToDrive } = await import("./drive.server");
+      const drive = await mirrorToDrive(bytes, data.question_name, guessContentType(data.question_name), "Questions");
+      drive_file_id = drive?.file_id ?? null;
+      drive_url = drive?.url ?? null;
     }
     const { error } = await supabase.from("assignments").insert({
       title: data.title, description: data.description ?? null,
       deadline: data.deadline, course_id: data.course_id, academic_year_id: data.academic_year_id,
-      kind: data.kind, question_path, question_name,
+      kind: data.kind, question_path, question_name, drive_file_id, drive_url,
     });
     if (error) throw new Error(error.message);
     return { ok: true };

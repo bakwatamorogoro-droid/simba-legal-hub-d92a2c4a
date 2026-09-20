@@ -329,12 +329,17 @@ export const submitGroupAssignment = createServerFn({ method: "POST" })
     const { runAiCheck } = await import("./ai-check.server");
     const ai = await runAiCheck(bytes, data.file_name);
 
+    // Backup copy to Google Drive (best-effort)
+    const { mirrorToDrive } = await import("./drive.server");
+    const drive = await mirrorToDrive(bytes, data.file_name, guessContentType(data.file_name), "Group Submissions");
+
     const { error } = await supabase.from("group_submissions").insert({
       group_id: grp.id, assignment_id: grp.assignment_id,
       submitted_by_student_id: s.studentId,
       file_path: path, file_name: data.file_name,
       ai_score: ai.ai_score, ai_reason: ai.ai_reason,
       participants,
+      drive_file_id: drive?.file_id ?? null, drive_url: drive?.url ?? null,
     });
     if (error) return { ok: false as const, error: error.message };
     return { ok: true as const, ai };
