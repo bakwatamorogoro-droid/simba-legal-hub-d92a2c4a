@@ -8,6 +8,13 @@
       "when": 1789691830164,
       "tag": "0000_add_student_password",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789879692672,
+      "tag": "0001_add_drive_mirror_columns",
+      "breakpoints": true
     }
   ]
 }
