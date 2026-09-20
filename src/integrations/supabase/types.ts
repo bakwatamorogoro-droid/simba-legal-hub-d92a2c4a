@@ -66,6 +66,8 @@ export type Database = {
           created_at: string
           deadline: string
           description: string | null
+          drive_file_id: string | null
+          drive_url: string | null
           id: string
           kind: Database["public"]["Enums"]["assignment_kind"]
           question_name: string | null
@@ -79,6 +81,8 @@ export type Database = {
           created_at?: string
           deadline: string
           description?: string | null
+          drive_file_id?: string | null
+          drive_url?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["assignment_kind"]
           question_name?: string | null
@@ -92,6 +96,8 @@ export type Database = {
           created_at?: string
           deadline?: string
           description?: string | null
+          drive_file_id?: string | null
+          drive_url?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["assignment_kind"]
           question_name?: string | null
@@ -220,6 +226,8 @@ export type Database = {
           ai_reason: string | null
           ai_score: number | null
           assignment_id: string
+          drive_file_id: string | null
+          drive_url: string | null
           file_name: string
           file_path: string
           group_id: string
@@ -235,6 +243,8 @@ export type Database = {
           ai_reason?: string | null
           ai_score?: number | null
           assignment_id: string
+          drive_file_id?: string | null
+          drive_url?: string | null
           file_name: string
           file_path: string
           group_id: string
@@ -250,6 +260,8 @@ export type Database = {
           ai_reason?: string | null
           ai_score?: number | null
           assignment_id?: string
+          drive_file_id?: string | null
+          drive_url?: string | null
           file_name?: string
           file_path?: string
           group_id?: string
@@ -409,6 +421,8 @@ export type Database = {
           ai_reason: string | null
           ai_score: number | null
           assignment_id: string
+          drive_file_id: string | null
+          drive_url: string | null
           file_name: string
           file_path: string
           id: string
@@ -423,6 +437,8 @@ export type Database = {
           ai_reason?: string | null
           ai_score?: number | null
           assignment_id: string
+          drive_file_id?: string | null
+          drive_url?: string | null
           file_name: string
           file_path: string
           id?: string
@@ -437,6 +453,8 @@ export type Database = {
           ai_reason?: string | null
           ai_score?: number | null
           assignment_id?: string
+          drive_file_id?: string | null
+          drive_url?: string | null
           file_name?: string
           file_path?: string
           id?: string
