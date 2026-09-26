@@ -8,6 +8,7 @@ import {
   FileText, Upload, Download, Award, Bell,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
+import { SiteImagesPanel } from "@/components/site-images-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -155,6 +156,7 @@ function AdminDashboard({ username }: { username: string }) {
             <TabsTrigger value="courses"><BookOpen className="mr-1 h-4 w-4" /> Courses</TabsTrigger>
             <TabsTrigger value="years"><CalendarDays className="mr-1 h-4 w-4" /> Academic Years</TabsTrigger>
             <TabsTrigger value="notifications"><Bell className="mr-1 h-4 w-4" /> Notifications</TabsTrigger>
+            <TabsTrigger value="media"><Upload className="mr-1 h-4 w-4" /> Picha za Tovuti</TabsTrigger>
           </TabsList>
 
           <TabsContent value="assignments" className="mt-6">
@@ -195,6 +197,9 @@ function AdminDashboard({ username }: { username: string }) {
           </TabsContent>
           <TabsContent value="notifications" className="mt-6">
             <NotificationsPanel />
+          </TabsContent>
+          <TabsContent value="media" className="mt-6">
+            <SiteImagesPanel />
           </TabsContent>
         </Tabs>
       </main>
