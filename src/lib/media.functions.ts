@@ -55,6 +55,8 @@ export const uploadSiteImage = createServerFn({ method: "POST" })
     const session = await useSession<{ adminId?: string; username?: string }>({
       password: process.env.ADMIN_SESSION_SECRET!,
       name: "sla_admin",
+    maxAge: 60 * 60 * 8,
+    cookie: { httpOnly: true, secure: true, sameSite: "lax", path: "/" },
     });
     if (!session.data?.adminId && !session.data?.username) return { ok: false as const, error: "Ingia kama admin" };
     const bytes = decode(data.file_base64);
@@ -72,6 +74,8 @@ async function studentSession() {
   const s = await useSession<{ studentId: string }>({
     password: process.env.ADMIN_SESSION_SECRET!,
     name: "sla_student",
+    maxAge: 60 * 60 * 8,
+    cookie: { httpOnly: true, secure: true, sameSite: "lax", path: "/" },
   });
   return s.data?.studentId ?? null;
 }

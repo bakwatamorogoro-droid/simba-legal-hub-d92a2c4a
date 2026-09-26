@@ -353,7 +353,7 @@ function SubmitBox({ groupId, disabled, onChanged }: { groupId: string; disabled
       <div className="text-xs text-muted-foreground">
         Yeyote aliyejiunga anaweza kutuma. Waliochat watajumuishwa kama washiriki.
       </div>
-      <input ref={ref} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={onFile} />
+      <input ref={ref} type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp" className="hidden" onChange={onFile} />
       <Button size="sm" disabled={disabled || uploading} onClick={() => ref.current?.click()}>
         {uploading ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Upload className="mr-1 h-4 w-4" />}
         Tuma Kazi
