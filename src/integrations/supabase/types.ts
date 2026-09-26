@@ -359,6 +359,24 @@ export type Database = {
           },
         ]
       }
+      site_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       students: {
         Row: {
           academic_year_id: string
@@ -370,6 +388,7 @@ export type Database = {
           last_name: string | null
           password_hash: string | null
           phone: string
+          photo_url: string | null
           reg_number: string
           updated_at: string
         }
@@ -383,6 +402,7 @@ export type Database = {
           last_name?: string | null
           password_hash?: string | null
           phone: string
+          photo_url?: string | null
           reg_number: string
           updated_at?: string
         }
@@ -396,6 +416,7 @@ export type Database = {
           last_name?: string | null
           password_hash?: string | null
           phone?: string
+          photo_url?: string | null
           reg_number?: string
           updated_at?: string
         }

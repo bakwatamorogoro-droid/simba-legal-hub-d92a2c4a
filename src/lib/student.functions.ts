@@ -198,7 +198,7 @@ const submitSchema = z.object({
   assignment_id: z.string().uuid(),
   file_base64: z.string().min(1),
   file_name: z.string().trim().min(1).max(200)
-    .refine((n) => /\.(pdf|doc|docx)$/i.test(n), { message: "PDF au Word pekee" }),
+    .refine((n) => /\.(pdf|doc|docx|png|jpe?g|webp)$/i.test(n), { message: "PDF, Word au picha pekee" }),
 });
 
 function decodeBase64(b64: string): Uint8Array {
@@ -214,6 +214,9 @@ function guessContentType(name: string): string {
   if (n.endsWith(".pdf")) return "application/pdf";
   if (n.endsWith(".doc")) return "application/msword";
   if (n.endsWith(".docx")) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  if (n.endsWith(".png")) return "image/png";
+  if (n.endsWith(".webp")) return "image/webp";
+  if (n.endsWith(".jpg") || n.endsWith(".jpeg")) return "image/jpeg";
   return "application/octet-stream";
 }
 

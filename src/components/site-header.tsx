@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Scale, Menu, X } from "lucide-react";
 import { useState } from "react";
 import logo from "@/assets/logo.png";
+import { useSiteImages } from "@/hooks/use-site-images";
 
 const links = [
   { to: "/", label: "Home" },
@@ -13,11 +14,12 @@ const links = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const imgs = useSiteImages();
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
         <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="" className="h-9 w-9 object-contain" />
+          <img src={imgs.logo ?? logo} alt="" className="h-9 w-9 object-contain" />
           <div className="leading-tight">
             <div className="font-display text-primary">Simba Legal Academy</div>
             <div className="text-[10px] uppercase tracking-[0.22em] text-gold">Learn · Research · Submit</div>

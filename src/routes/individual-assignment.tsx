@@ -210,7 +210,7 @@ function AssignmentCard({ row, onChanged }: { row: Row; onChanged: () => void })
             </Button>
           ) : (
             <>
-              <input ref={inputRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={onFile} />
+              <input ref={inputRef} type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp" className="hidden" onChange={onFile} />
               <Button size="sm" disabled={!canSubmit || uploading} onClick={() => inputRef.current?.click()}>
                 {uploading ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Upload className="mr-1 h-4 w-4" />}
                 Tuma Kazi
