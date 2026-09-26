@@ -15,6 +15,13 @@
       "when": 1789879692672,
       "tag": "0001_add_drive_mirror_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790408290891,
+      "tag": "0002_media_and_speed_indexes",
+      "breakpoints": true
     }
   ]
 }
