@@ -4,6 +4,7 @@ import hero from "@/assets/hero.jpg";
 import founder from "@/assets/founder.jpg";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
+import { useSiteImages } from "@/hooks/use-site-images";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -33,13 +34,14 @@ const stats = [
 ] as const;
 
 function Landing() {
+  const imgs = useSiteImages();
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-border/60 bg-primary">
-        <img src={hero} alt="" className="absolute inset-0 h-full w-full object-cover opacity-30" />
+        <img src={imgs.hero ?? hero} alt="" className="absolute inset-0 h-full w-full object-cover opacity-30" />
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/70" />
         <div className="relative mx-auto grid max-w-7xl gap-10 px-6 py-20 sm:py-28 lg:grid-cols-[1.1fr_1fr] lg:items-center">
           <div className="text-primary-foreground">
@@ -108,7 +110,7 @@ function Landing() {
           <div className="relative mx-auto w-full max-w-sm">
             <div className="absolute -inset-3 rounded-3xl bg-gradient-to-br from-gold/30 to-primary/20 blur-2xl" />
             <div className="relative overflow-hidden rounded-3xl border border-gold/40 shadow-elegant">
-              <img src={founder} alt="Founder wa Simba Legal Academy" width={1024} height={1280} loading="lazy" className="h-full w-full object-cover" />
+              <img src={imgs.founder ?? founder} alt="Founder wa Simba Legal Academy" width={1024} height={1280} loading="lazy" className="h-full w-full object-cover" />
             </div>
             <div className="absolute -bottom-3 left-4 right-4 rounded-xl border border-gold/40 bg-background/95 px-4 py-3 text-center shadow-lg backdrop-blur">
               <div className="text-[10px] uppercase tracking-[0.25em] text-gold">Founder & Principal</div>
