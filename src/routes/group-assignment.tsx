@@ -9,6 +9,7 @@ import {
   Send, MessageSquare,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
+import { ErrorState } from "@/components/query-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,8 +30,18 @@ type Session = { studentId: string; fullName: string; regNumber: string };
 
 function Page() {
   const getSession = useServerFn(getStudentSession);
-  const { data: session, isLoading } = useQuery({ queryKey: ["student-session"], queryFn: () => getSession() });
+  const { data: session, isLoading, isError, refetch } = useQuery({
+    queryKey: ["student-session"],
+    queryFn: () => getSession(),
+    retry: 1,
+  });
   if (isLoading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (isError) return (
+    <div className="min-h-screen bg-muted/30">
+      <SiteHeader />
+      <main className="mx-auto max-w-md px-6 py-20"><ErrorState onRetry={() => refetch()} /></main>
+    </div>
+  );
   if (!session) return <NotLoggedIn />;
   return <GroupDashboard session={session} />;
 }

@@ -2,6 +2,7 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Printer, Home, ArrowLeft, Sparkles } from "lucide-react";
+import { ErrorState } from "@/components/query-state";
 import { Button } from "@/components/ui/button";
 import { getMarkedPaper } from "@/lib/student.functions";
 
@@ -22,13 +23,21 @@ export const Route = createFileRoute("/marked-paper/$kind/$id")({
 function MarkedPaperPage() {
   const { kind, id } = useParams({ from: "/marked-paper/$kind/$id" });
   const fetchPaper = useServerFn(getMarkedPaper);
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["marked-paper", kind, id],
     queryFn: () => fetchPaper({ data: { submission_id: id, kind: kind === "group" ? "group" : "individual" } }),
+    retry: 1,
   });
 
   if (isLoading) {
     return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-md px-6 py-20">
+        <ErrorState onRetry={() => refetch()} />
+      </div>
+    );
   }
   if (!data?.ok) {
     return (

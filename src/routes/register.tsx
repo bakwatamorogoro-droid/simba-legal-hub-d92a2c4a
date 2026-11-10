@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2, UserPlus, CheckCircle2 } from "lucide-react";
+import { Loader2, UserPlus, CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,11 @@ export const Route = createFileRoute("/register")({
 function RegisterPage() {
   const fetchOptions = useServerFn(listCoursesAndYears);
   const doRegister = useServerFn(registerStudent);
-  const { data, isLoading } = useQuery({ queryKey: ["cy"], queryFn: () => fetchOptions() });
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
+    queryKey: ["cy"],
+    queryFn: () => fetchOptions(),
+    retry: 2,
+  });
 
   const [form, setForm] = useState({
     full_name: "", reg_number: "", phone: "", academic_year_id: "", course_id: "", password: "",
@@ -90,22 +94,32 @@ function RegisterPage() {
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Academic Year">
-                    <Select value={form.academic_year_id} onValueChange={(v) => setForm({ ...form, academic_year_id: v })}>
-                      <SelectTrigger><SelectValue placeholder={isLoading ? "Loading..." : "Chagua"} /></SelectTrigger>
+                    <Select value={form.academic_year_id} onValueChange={(v) => setForm({ ...form, academic_year_id: v })} disabled={isError}>
+                      <SelectTrigger><SelectValue placeholder={isError ? "Haipatikani" : isLoading ? "Inapakia..." : "Chagua"} /></SelectTrigger>
                       <SelectContent>
                         {data?.years.map((y) => <SelectItem key={y.id} value={y.id}>{y.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </Field>
                   <Field label="Course">
-                    <Select value={form.course_id} onValueChange={(v) => setForm({ ...form, course_id: v })}>
-                      <SelectTrigger><SelectValue placeholder={isLoading ? "Loading..." : "Chagua"} /></SelectTrigger>
+                    <Select value={form.course_id} onValueChange={(v) => setForm({ ...form, course_id: v })} disabled={isError}>
+                      <SelectTrigger><SelectValue placeholder={isError ? "Haipatikani" : isLoading ? "Inapakia..." : "Chagua"} /></SelectTrigger>
                       <SelectContent>
                         {data?.courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </Field>
                 </div>
+                {isError && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                    <span className="inline-flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" /> Imeshindikana kupakia kozi na miaka. Angalia muunganisho.
+                    </span>
+                    <Button type="button" variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+                      <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} /> Jaribu tena
+                    </Button>
+                  </div>
+                )}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Password">
                     <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Angalau herufi 6" />

@@ -7,10 +7,8 @@ const IMG_RE = /\.(png|jpe?g|webp|gif)$/i;
 const SITE_KEYS = ["logo", "hero", "founder"] as const;
 
 async function svc() {
-  const { createClient } = await import("@supabase/supabase-js");
-  return createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
 }
 
 function decode(b64: string) {
@@ -50,7 +48,7 @@ export const getSiteImages = createServerFn({ method: "GET" }).handler(async () 
 });
 
 export const uploadSiteImage = createServerFn({ method: "POST" })
-  .inputValidator((d) => imgSchema.extend({ key: z.enum(SITE_KEYS) }).parse(d))
+  .validator((d) => imgSchema.extend({ key: z.enum(SITE_KEYS) }).parse(d))
   .handler(async ({ data }) => {
     const session = await useSession<{ adminId?: string; username?: string }>({
       password: process.env.ADMIN_SESSION_SECRET!,
@@ -89,7 +87,7 @@ export const getMyPhoto = createServerFn({ method: "GET" }).handler(async () => 
 });
 
 export const uploadMyPhoto = createServerFn({ method: "POST" })
-  .inputValidator((d) => imgSchema.parse(d))
+  .validator((d) => imgSchema.parse(d))
   .handler(async ({ data }) => {
     const id = await studentSession();
     if (!id) return { ok: false as const, error: "Tafadhali ingia" };

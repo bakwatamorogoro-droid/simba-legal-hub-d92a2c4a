@@ -40,26 +40,30 @@ function Landing() {
       <SiteHeader />
 
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-border/60 bg-primary">
-        <img src={imgs.hero ?? hero} alt="" className="absolute inset-0 h-full w-full object-cover opacity-30" />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/70" />
-        <div className="relative mx-auto grid max-w-7xl gap-10 px-6 py-20 sm:py-28 lg:grid-cols-[1.1fr_1fr] lg:items-center">
+      <section className="relative overflow-hidden gradient-hero-bg">
+        <img src={imgs.hero ?? hero} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/70 via-primary/50 to-transparent" />
+        <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-primary-glow/30 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-32 left-1/4 h-80 w-80 rounded-full bg-gold/20 blur-3xl" />
+        <div className="relative mx-auto grid max-w-7xl gap-12 px-6 py-20 sm:py-28 lg:grid-cols-[1.1fr_1fr] lg:items-center">
           <div className="text-primary-foreground">
-            <div className="inline-flex items-center gap-2 rounded-full border border-gold/50 bg-gold/10 px-3 py-1 text-[11px] uppercase tracking-[0.25em] text-gold">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 px-4 py-1.5 text-[11px] uppercase tracking-[0.25em] text-primary-foreground/90 backdrop-blur">
               <Scale className="h-3.5 w-3.5" /> Assignment Management System
             </div>
-            <h1 className="mt-6 font-display text-4xl leading-tight sm:text-6xl">
-              Simba Legal <span className="text-gold">Academy</span>
+            <h1 className="mt-6 font-display text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl">
+              Simba Legal <span className="gold-text">Academy</span>
             </h1>
-            <p className="mt-3 font-display text-xl italic text-gold">Learn • Research • Submit • Succeed</p>
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-primary-foreground/85 sm:text-lg">
+            <p className="mt-4 font-display text-lg font-semibold tracking-wide text-primary-foreground/90 sm:text-xl">
+              Learn • Research • Submit • Succeed
+            </p>
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-primary-foreground/80 sm:text-lg">
               Mfumo wa kisasa wa kusimamia assignments — jisajili, wasilisha kazi zako binafsi au za kikundi, jadili na wenzako online, na fuatilia matokeo.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg" className="bg-gold text-primary hover:bg-gold/90">
+              <Button asChild size="lg" className="rounded-full bg-primary-foreground text-primary shadow-lg transition hover:-translate-y-0.5 hover:bg-primary-foreground/90">
                 <Link to="/register">Anza Kujisajili <ArrowRight className="ml-2 h-4 w-4" /></Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground/10">
+              <Button asChild size="lg" variant="outline" className="rounded-full border-primary-foreground/40 bg-primary-foreground/5 text-primary-foreground backdrop-blur transition hover:bg-primary-foreground/15">
                 <Link to="/login"><LogIn className="mr-2 h-4 w-4" /> Student Login</Link>
               </Button>
             </div>
@@ -71,16 +75,16 @@ function Landing() {
               <Link
                 key={to}
                 to={to}
-                className="group flex items-start gap-4 rounded-2xl border border-gold/25 bg-background/10 p-5 backdrop-blur-md transition hover:-translate-y-0.5 hover:border-gold/60 hover:bg-background/15"
+                className="group flex items-start gap-4 rounded-2xl border border-primary-foreground/15 bg-primary-foreground/10 p-5 backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-primary-foreground/35 hover:bg-primary-foreground/15"
               >
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gold text-primary shadow-lg">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-foreground text-primary shadow-lg">
                   <Icon className="h-6 w-6" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="font-display text-lg text-primary-foreground">{title}</div>
+                  <div className="font-display text-lg font-semibold text-primary-foreground">{title}</div>
                   <div className="mt-0.5 text-sm text-primary-foreground/75">{desc}</div>
                 </div>
-                <ArrowRight className="mt-3 h-4 w-4 shrink-0 text-gold transition group-hover:translate-x-1" />
+                <ArrowRight className="mt-3 h-4 w-4 shrink-0 text-primary-foreground/70 transition group-hover:translate-x-1" />
               </Link>
             ))}
           </div>
@@ -92,12 +96,12 @@ function Landing() {
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-6 py-8 sm:grid-cols-4">
           {stats.map(({ icon: Icon, label }) => (
             <div key={label} className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-gold-bg text-primary">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-gold-bg text-primary-foreground shadow-gold">
                 <Icon className="h-5 w-5" />
               </div>
               <div>
-                <div className="text-[10px] uppercase tracking-[0.2em] text-gold">Feature</div>
-                <div className="font-display text-primary">{label}</div>
+                <div className="text-[10px] uppercase tracking-[0.2em] text-primary">Feature</div>
+                <div className="font-display font-semibold text-primary">{label}</div>
               </div>
             </div>
           ))}

@@ -13,17 +13,16 @@ async function getSession() {
   });
 }
 
-async function requireStudent() {
+async function requireStudent(): Promise<StudentSessionData> {
   const session = await getSession();
-  if (!session.data?.studentId) throw new Error("UNAUTHORIZED");
-  return session.data;
+  const data = session.data;
+  if (!data?.studentId || !data.fullName || !data.regNumber) throw new Error("UNAUTHORIZED");
+  return { studentId: data.studentId, fullName: data.fullName, regNumber: data.regNumber };
 }
 
 async function getServiceClient() {
-  const { createClient } = await import("@supabase/supabase-js");
-  return createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
 }
 
 function decodeBase64(b64: string): Uint8Array {
@@ -185,7 +184,7 @@ export const listMyGroupAssignments = createServerFn({ method: "GET" }).handler(
 
 // ---------- Auto-join ----------
 export const joinGroupAssignment = createServerFn({ method: "POST" })
-  .inputValidator((d: { assignment_id: string }) => z.object({ assignment_id: z.string().uuid() }).parse(d))
+  .validator((d: { assignment_id: string }) => z.object({ assignment_id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const s = await requireStudent();
     const supabase = await getServiceClient();
@@ -229,7 +228,7 @@ export const joinGroupAssignment = createServerFn({ method: "POST" })
 
 // ---------- Chat ----------
 export const listGroupChat = createServerFn({ method: "POST" })
-  .inputValidator((d: { assignment_id: string }) => z.object({ assignment_id: z.string().uuid() }).parse(d))
+  .validator((d: { assignment_id: string }) => z.object({ assignment_id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const s = await requireStudent();
     const supabase = await getServiceClient();
@@ -245,7 +244,7 @@ export const listGroupChat = createServerFn({ method: "POST" })
   });
 
 export const sendGroupChat = createServerFn({ method: "POST" })
-  .inputValidator((d: { assignment_id: string; message: string }) =>
+  .validator((d: { assignment_id: string; message: string }) =>
     z.object({ assignment_id: z.string().uuid(), message: z.string().trim().min(1).max(2000) }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -275,7 +274,7 @@ const submitGroupSchema = z.object({
 });
 
 export const submitGroupAssignment = createServerFn({ method: "POST" })
-  .inputValidator((d) => submitGroupSchema.parse(d))
+  .validator((d) => submitGroupSchema.parse(d))
   .handler(async ({ data }) => {
     const s = await requireStudent();
     const supabase = await getServiceClient();
@@ -349,7 +348,7 @@ export const submitGroupAssignment = createServerFn({ method: "POST" })
   });
 
 export const getGroupQuestionUrl = createServerFn({ method: "POST" })
-  .inputValidator((d: { assignment_id: string }) => z.object({ assignment_id: z.string().uuid() }).parse(d))
+  .validator((d: { assignment_id: string }) => z.object({ assignment_id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireStudent();
     const supabase = await getServiceClient();
