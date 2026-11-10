@@ -8,6 +8,7 @@ import {
   FileText, Upload, Download, Award, Bell,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
+import { ErrorState } from "@/components/query-state";
 import { SiteImagesPanel } from "@/components/site-images-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,12 +37,23 @@ export const Route = createFileRoute("/admin")({
 
 function AdminRoot() {
   const getSession = useServerFn(getAdminSession);
-  const { data: session, isLoading } = useQuery({ queryKey: ["admin-session"], queryFn: () => getSession() });
+  const { data: session, isLoading, isError, refetch } = useQuery({
+    queryKey: ["admin-session"],
+    queryFn: () => getSession(),
+    retry: 1,
+  });
 
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  if (isError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-6">
+        <ErrorState onRetry={() => refetch()} />
       </div>
     );
   }

@@ -13,22 +13,21 @@ async function getSession() {
   });
 }
 
-async function requireAdmin() {
+async function requireAdmin(): Promise<AdminSessionData> {
   const session = await getSession();
-  if (!session.data?.adminId) throw new Error("UNAUTHORIZED");
-  return session.data;
+  const data = session.data;
+  if (!data?.adminId || !data.username) throw new Error("UNAUTHORIZED");
+  return { adminId: data.adminId, username: data.username };
 }
 
 async function getServiceClient() {
-  const { createClient } = await import("@supabase/supabase-js");
-  return createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
 }
 
 // ---------- Auth ----------
 export const adminLogin = createServerFn({ method: "POST" })
-  .inputValidator((d: { username: string; password: string }) =>
+  .validator((d: { username: string; password: string }) =>
     z.object({ username: z.string().trim().min(1).max(80), password: z.string().min(1).max(200) }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -69,7 +68,7 @@ export const listCourses = createServerFn({ method: "GET" }).handler(async () =>
 });
 
 export const createCourse = createServerFn({ method: "POST" })
-  .inputValidator((d: { name: string }) => nameSchema.parse(d))
+  .validator((d: { name: string }) => nameSchema.parse(d))
   .handler(async ({ data }) => {
     await requireAdmin();
     const supabase = await getServiceClient();
@@ -79,7 +78,7 @@ export const createCourse = createServerFn({ method: "POST" })
   });
 
 export const updateCourse = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string; name: string }) => idNameSchema.parse(d))
+  .validator((d: { id: string; name: string }) => idNameSchema.parse(d))
   .handler(async ({ data }) => {
     await requireAdmin();
     const supabase = await getServiceClient();
@@ -89,7 +88,7 @@ export const updateCourse = createServerFn({ method: "POST" })
   });
 
 export const deleteCourse = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string }) => idSchema.parse(d))
+  .validator((d: { id: string }) => idSchema.parse(d))
   .handler(async ({ data }) => {
     await requireAdmin();
     const supabase = await getServiceClient();
@@ -106,7 +105,7 @@ export const listYears = createServerFn({ method: "GET" }).handler(async () => {
 });
 
 export const createYear = createServerFn({ method: "POST" })
-  .inputValidator((d: { name: string }) => nameSchema.parse(d))
+  .validator((d: { name: string }) => nameSchema.parse(d))
   .handler(async ({ data }) => {
     await requireAdmin();
     const supabase = await getServiceClient();
@@ -116,7 +115,7 @@ export const createYear = createServerFn({ method: "POST" })
   });
 
 export const updateYear = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string; name: string }) => idNameSchema.parse(d))
+  .validator((d: { id: string; name: string }) => idNameSchema.parse(d))
   .handler(async ({ data }) => {
     await requireAdmin();
     const supabase = await getServiceClient();
@@ -126,7 +125,7 @@ export const updateYear = createServerFn({ method: "POST" })
   });
 
 export const deleteYear = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string }) => idSchema.parse(d))
+  .validator((d: { id: string }) => idSchema.parse(d))
   .handler(async ({ data }) => {
     await requireAdmin();
     const supabase = await getServiceClient();
@@ -164,7 +163,7 @@ const studentSchema = z.object({
 });
 
 export const registerStudent = createServerFn({ method: "POST" })
-  .inputValidator((d) =>
+  .validator((d) =>
     studentSchema.extend({ password: z.string().min(6).max(72) }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -191,7 +190,7 @@ export const registerStudent = createServerFn({ method: "POST" })
 
 
 export const updateStudent = createServerFn({ method: "POST" })
-  .inputValidator((d) => studentSchema.extend({ id: z.string().uuid() }).parse(d))
+  .validator((d) => studentSchema.extend({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireAdmin();
     const supabase = await getServiceClient();
@@ -202,7 +201,7 @@ export const updateStudent = createServerFn({ method: "POST" })
   });
 
 export const deleteStudent = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string }) => idSchema.parse(d))
+  .validator((d: { id: string }) => idSchema.parse(d))
   .handler(async ({ data }) => {
     await requireAdmin();
     const supabase = await getServiceClient();
@@ -270,7 +269,7 @@ export const listAssignments = createServerFn({ method: "GET" }).handler(async (
 });
 
 export const createAssignment = createServerFn({ method: "POST" })
-  .inputValidator((d) => assignmentSchema.parse(d))
+  .validator((d) => assignmentSchema.parse(d))
   .handler(async ({ data }) => {
     await requireAdmin();
     const supabase = await getServiceClient();
@@ -304,7 +303,7 @@ export const createAssignment = createServerFn({ method: "POST" })
   });
 
 export const deleteAssignment = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string }) => idSchema.parse(d))
+  .validator((d: { id: string }) => idSchema.parse(d))
   .handler(async ({ data }) => {
     await requireAdmin();
     const supabase = await getServiceClient();
@@ -314,7 +313,7 @@ export const deleteAssignment = createServerFn({ method: "POST" })
   });
 
 export const signQuestionDownload = createServerFn({ method: "POST" })
-  .inputValidator((d: { assignment_id: string }) => z.object({ assignment_id: z.string().uuid() }).parse(d))
+  .validator((d: { assignment_id: string }) => z.object({ assignment_id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const supabase = await getServiceClient();
     const { data: a } = await supabase.from("assignments").select("question_path").eq("id", data.assignment_id).maybeSingle();
@@ -333,7 +332,7 @@ type SubmissionRow = {
 };
 
 export const listSubmissionsForAssignment = createServerFn({ method: "POST" })
-  .inputValidator((d: { assignment_id: string }) => z.object({ assignment_id: z.string().uuid() }).parse(d))
+  .validator((d: { assignment_id: string }) => z.object({ assignment_id: z.string().uuid() }).parse(d))
   .handler(async ({ data }): Promise<SubmissionRow[]> => {
     await requireAdmin();
     const supabase = await getServiceClient();
@@ -361,20 +360,23 @@ const markSchema = z.object({
 });
 
 export const markSubmission = createServerFn({ method: "POST" })
-  .inputValidator((d) => markSchema.parse(d))
+  .validator((d) => markSchema.parse(d))
   .handler(async ({ data }) => {
     await requireAdmin();
     const supabase = await getServiceClient();
-    const { error } = await supabase.from("submissions").update({
-      marks: data.marks, remarks: data.remarks, annotations: data.annotations ?? [],
-      marked_at: new Date().toISOString(),
-    }).eq("id", data.id);
+    const base = { marks: data.marks, remarks: data.remarks, marked_at: new Date().toISOString() };
+    let { error } = await supabase.from("submissions")
+      .update({ ...base, annotations: data.annotations ?? [] }).eq("id", data.id);
+    // `annotations` may be absent until its migration is applied to the database.
+    if (error && error.message.includes("annotations")) {
+      ({ error } = await supabase.from("submissions").update(base).eq("id", data.id));
+    }
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 export const signSubmissionDownload = createServerFn({ method: "POST" })
-  .inputValidator((d: { submission_id: string }) => z.object({ submission_id: z.string().uuid() }).parse(d))
+  .validator((d: { submission_id: string }) => z.object({ submission_id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireAdmin();
     const supabase = await getServiceClient();
@@ -396,7 +398,7 @@ type GroupSubmissionRow = {
 };
 
 export const listGroupSubmissionsForAssignment = createServerFn({ method: "POST" })
-  .inputValidator((d: { assignment_id: string }) => z.object({ assignment_id: z.string().uuid() }).parse(d))
+  .validator((d: { assignment_id: string }) => z.object({ assignment_id: z.string().uuid() }).parse(d))
   .handler(async ({ data }): Promise<GroupSubmissionRow[]> => {
     await requireAdmin();
     const supabase = await getServiceClient();
@@ -432,7 +434,7 @@ export const listGroupSubmissionsForAssignment = createServerFn({ method: "POST"
   });
 
 export const markGroupSubmission = createServerFn({ method: "POST" })
-  .inputValidator((d) => markSchema.parse(d))
+  .validator((d) => markSchema.parse(d))
   .handler(async ({ data }) => {
     await requireAdmin();
     const supabase = await getServiceClient();
@@ -445,7 +447,7 @@ export const markGroupSubmission = createServerFn({ method: "POST" })
   });
 
 export const signGroupSubmissionDownload = createServerFn({ method: "POST" })
-  .inputValidator((d: { submission_id: string }) => z.object({ submission_id: z.string().uuid() }).parse(d))
+  .validator((d: { submission_id: string }) => z.object({ submission_id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireAdmin();
     const supabase = await getServiceClient();

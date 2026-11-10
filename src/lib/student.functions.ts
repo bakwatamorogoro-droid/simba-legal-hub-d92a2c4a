@@ -13,17 +13,16 @@ async function getSession() {
   });
 }
 
-async function requireStudent() {
+async function requireStudent(): Promise<StudentSessionData> {
   const session = await getSession();
-  if (!session.data?.studentId) throw new Error("UNAUTHORIZED");
-  return session.data;
+  const data = session.data;
+  if (!data?.studentId || !data.fullName || !data.regNumber) throw new Error("UNAUTHORIZED");
+  return { studentId: data.studentId, fullName: data.fullName, regNumber: data.regNumber };
 }
 
 async function getServiceClient() {
-  const { createClient } = await import("@supabase/supabase-js");
-  return createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
 }
 
 function normalize(s: string) {
@@ -32,7 +31,7 @@ function normalize(s: string) {
 
 // ---------- Auth ----------
 export const studentLogin = createServerFn({ method: "POST" })
-  .inputValidator((d: { reg_number: string; password: string }) =>
+  .validator((d: { reg_number: string; password: string }) =>
     z
       .object({
         reg_number: z.string().trim().min(1).max(80),
@@ -85,7 +84,7 @@ export const getStudentSession = createServerFn({ method: "GET" }).handler(
 
 // Recover Reg Number using phone
 export const recoverRegNumber = createServerFn({ method: "POST" })
-  .inputValidator((d: { phone: string }) =>
+  .validator((d: { phone: string }) =>
     z.object({ phone: z.string().trim().min(5).max(30) }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -101,7 +100,7 @@ export const recoverRegNumber = createServerFn({ method: "POST" })
 
 // Reset password using reg number + phone
 export const resetStudentPassword = createServerFn({ method: "POST" })
-  .inputValidator((d: { reg_number: string; phone: string; password: string }) =>
+  .validator((d: { reg_number: string; phone: string; password: string }) =>
     z
       .object({
         reg_number: z.string().trim().min(1).max(80),
@@ -183,7 +182,7 @@ export const listMyAssignments = createServerFn({ method: "GET" }).handler(async
 });
 
 export const getMyQuestionUrl = createServerFn({ method: "POST" })
-  .inputValidator((d: { assignment_id: string }) => z.object({ assignment_id: z.string().uuid() }).parse(d))
+  .validator((d: { assignment_id: string }) => z.object({ assignment_id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireStudent();
     const supabase = await getServiceClient();
@@ -221,7 +220,7 @@ function guessContentType(name: string): string {
 }
 
 export const submitMyAssignment = createServerFn({ method: "POST" })
-  .inputValidator((d) => submitSchema.parse(d))
+  .validator((d) => submitSchema.parse(d))
   .handler(async ({ data }) => {
     const s = await requireStudent();
     const supabase = await getServiceClient();
@@ -298,7 +297,7 @@ export type MarkedPaper = {
 };
 
 export const getMarkedPaper = createServerFn({ method: "POST" })
-  .inputValidator((d: { submission_id: string; kind: "individual" | "group" }) =>
+  .validator((d: { submission_id: string; kind: "individual" | "group" }) =>
     z.object({ submission_id: z.string().uuid(), kind: z.enum(["individual", "group"]) }).parse(d),
   )
   .handler(async ({ data }): Promise<{ ok: false; error: string } | { ok: true; paper: MarkedPaper }> => {
@@ -306,11 +305,17 @@ export const getMarkedPaper = createServerFn({ method: "POST" })
     const supabase = await getServiceClient();
 
     if (data.kind === "individual") {
-      const { data: sub } = await supabase
+      const cols = "id, student_id, file_name, submitted_at, marks, remarks, marked_at, ai_score, ai_reason, assignment:assignments(title, course:courses(name), academic_year:academic_years(name)), student:students(full_name, reg_number)";
+      const withAnn = cols.replace("ai_reason,", "ai_reason, annotations,");
+      let { data: sub, error: subErr } = await supabase
         .from("submissions")
-        .select("id, student_id, file_name, submitted_at, marks, remarks, marked_at, ai_score, ai_reason, annotations, assignment:assignments(title, course:courses(name), academic_year:academic_years(name)), student:students(full_name, reg_number)")
+        .select(withAnn)
         .eq("id", data.submission_id)
         .maybeSingle();
+      // `annotations` may be absent until its migration is applied to the database.
+      if (subErr?.message.includes("annotations")) {
+        ({ data: sub } = await supabase.from("submissions").select(cols).eq("id", data.submission_id).maybeSingle());
+      }
       const row = sub as unknown as {
         student_id: string; file_name: string; submitted_at: string; marks: number | null;
         remarks: string | null; marked_at: string | null; ai_score: number | null; ai_reason: string | null;
@@ -343,11 +348,16 @@ export const getMarkedPaper = createServerFn({ method: "POST" })
       };
     }
 
-    const { data: gsub } = await supabase
+    const gcols = "id, group_id, file_name, submitted_at, marks, remarks, marked_at, ai_score, ai_reason, assignment:assignments(title, course:courses(name), academic_year:academic_years(name)), group:groups(name)";
+    const gWithAnn = gcols.replace("ai_reason,", "ai_reason, annotations,");
+    let { data: gsub, error: gsubErr } = await supabase
       .from("group_submissions")
-      .select("id, group_id, file_name, submitted_at, marks, remarks, marked_at, ai_score, ai_reason, annotations, assignment:assignments(title, course:courses(name), academic_year:academic_years(name)), group:groups(name)")
+      .select(gWithAnn)
       .eq("id", data.submission_id)
       .maybeSingle();
+    if (gsubErr?.message.includes("annotations")) {
+      ({ data: gsub } = await supabase.from("group_submissions").select(gcols).eq("id", data.submission_id).maybeSingle());
+    }
     const g = gsub as unknown as {
       group_id: string; file_name: string; submitted_at: string; marks: number | null;
       remarks: string | null; marked_at: string | null; ai_score: number | null; ai_reason: string | null;

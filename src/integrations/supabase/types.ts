@@ -225,6 +225,7 @@ export type Database = {
         Row: {
           ai_reason: string | null
           ai_score: number | null
+          annotations: Json
           assignment_id: string
           drive_file_id: string | null
           drive_url: string | null
@@ -242,6 +243,7 @@ export type Database = {
         Insert: {
           ai_reason?: string | null
           ai_score?: number | null
+          annotations?: Json
           assignment_id: string
           drive_file_id?: string | null
           drive_url?: string | null
@@ -259,6 +261,7 @@ export type Database = {
         Update: {
           ai_reason?: string | null
           ai_score?: number | null
+          annotations?: Json
           assignment_id?: string
           drive_file_id?: string | null
           drive_url?: string | null
@@ -441,6 +444,7 @@ export type Database = {
         Row: {
           ai_reason: string | null
           ai_score: number | null
+          annotations: Json
           assignment_id: string
           drive_file_id: string | null
           drive_url: string | null
@@ -457,6 +461,7 @@ export type Database = {
         Insert: {
           ai_reason?: string | null
           ai_score?: number | null
+          annotations?: Json
           assignment_id: string
           drive_file_id?: string | null
           drive_url?: string | null
@@ -473,6 +478,7 @@ export type Database = {
         Update: {
           ai_reason?: string | null
           ai_score?: number | null
+          annotations?: Json
           assignment_id?: string
           drive_file_id?: string | null
           drive_url?: string | null
